@@ -33,3 +33,15 @@ def poststart(resource, ctx):
         getattr(isystem, 'longitude', None)
     ctx.instance.runtime_properties['distributed_cloud_role'] = \
         isystem.distributed_cloud_role
+
+    ihosts = ctx.instance.runtime_properties.get('ihosts')
+    for ihost in isystem.ihosts:
+        if ihost.uuid not in ihosts:
+            ihosts[ihost.uuid] = {
+                'hostname': ihost.hostname,
+                'mgmt_ip': ihost.mgmt_ip,
+                'id': ihost.id,
+                'personality': ihost.personality,
+                'subfunctions': ihost.subfunctions,
+            }
+    ctx.instance.runtime_properties['ihosts'] = ihosts

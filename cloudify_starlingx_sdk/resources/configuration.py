@@ -38,6 +38,15 @@ class ISystemResource(ConfigurationResource):
     def get(self):
         return self.connection.isystem.get(self.resource_id)
 
+    @property
+    def ihosts(self):
+        ihosts_list = []
+        for ihost in self.connection.ihost.list():
+            if ihost.system_uuid != self.resource_id:
+                continue
+            ihosts_list.append(ihost)
+        return ihosts_list
+
 
 class ApplicationResource(ConfigurationResource):
 
@@ -48,3 +57,12 @@ class ApplicationResource(ConfigurationResource):
 
     def get(self):
         return self.connection.app.get(self.resource_id)
+
+
+class IhostResource(ConfigurationResource):
+
+    def list(self):
+        return self.connection.ihost.list()
+
+    def get(self):
+        return self.connection.ihost.get(self.resource_id)
