@@ -24,16 +24,14 @@ def preconfigure(_, ctx):
 
 @with_starlingx_resource(SubcloudResource)
 def poststart(resource, ctx):
+    """ Populate the subcloud resource with relevant data.
+
+    :param resource:
+    :param ctx:
+    :return:
+    """
     resource.client_config['region_name'] = \
         ctx.instance.runtime_properties['controller_region_name']
     subcloud = resource.get()
-    ctx.instance.runtime_properties['external_id'] = subcloud.resource_id
-    ctx.instance.runtime_properties['name'] = subcloud.name
-    ctx.instance.runtime_properties['location'] = subcloud.location
-    ctx.instance.runtime_properties['description'] = subcloud.description
-    ctx.instance.runtime_properties['group_id'] = \
-        subcloud.group_id
-    ctx.instance.runtime_properties['oam_floating_ip'] = \
-        subcloud.oam_floating_ip
-    ctx.instance.runtime_properties['management_state'] = \
-        subcloud.management_state
+    ctx.instance.runtime_properties.update(subcloud.to_dict())
+    ctx.instance.update()

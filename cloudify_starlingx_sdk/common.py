@@ -33,6 +33,7 @@ class StarlingXResource(object):
         self.config = resource_config or {}
         self.resource_id = self.get_identifier()
         self.name = self.config.get(self.name_key)
+        self._resource = None
 
     @property
     def connection(self):
@@ -60,3 +61,9 @@ class StarlingXResource(object):
     def get_identifier(self):
         return self.config.get(self.id_key,
                                self.config.get(self.name_key))
+
+    @property
+    def resource(self):
+        if not self._resource:
+            self._resource = self.get()
+        return self._resource
