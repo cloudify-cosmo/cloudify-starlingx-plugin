@@ -18,6 +18,7 @@ from cgtsclient.client import get_client
 
 
 class ConfigurationResource(StarlingXResource):
+    """Base class for objects that use the cgtsclient."""
 
     @property
     def connection(self):
@@ -31,6 +32,7 @@ class ConfigurationResource(StarlingXResource):
 
 
 class ISystemResource(ConfigurationResource):
+    """Class representing Starlingx I-system or "controller" objects."""
 
     def list(self):
         return self.connection.isystem.list()
@@ -47,6 +49,22 @@ class ISystemResource(ConfigurationResource):
             ihosts_list.append(ihost)
         return ihosts_list
 
+    @property
+    def region_name(self):
+        return self.resource.region_name
+
+    def to_dict(self):
+        return {
+            'name': self.resource.name,
+            'description': self.resource.description,
+            'location': self.resource.location,
+            'system_type': self.resource.system_type,
+            'system_mode': self.resource.system_mode,
+            'region_name': self.region_name,
+            'latitude': getattr(self.resource, 'latitude', None),
+            'longitude': getattr(resource, 'latitude', None),
+            'distributed_cloud_role': self.resource.distributed_cloud_role
+        }
 
 class ApplicationResource(ConfigurationResource):
 

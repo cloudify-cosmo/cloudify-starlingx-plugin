@@ -20,20 +20,7 @@ from cloudify_starlingx_sdk.resources.configuration import ISystemResource
 @with_starlingx_resource(ISystemResource)
 def poststart(resource, ctx):
     isystem = resource.get()
-    ctx.instance.runtime_properties['external_id'] = isystem.resource_id
-    ctx.instance.runtime_properties['name'] = isystem.name
-    ctx.instance.runtime_properties['location'] = isystem.location
-    ctx.instance.runtime_properties['description'] = isystem.description
-    ctx.instance.runtime_properties['system_type'] = isystem.system_type
-    ctx.instance.runtime_properties['system_mode'] = isystem.system_mode
-    ctx.instance.runtime_properties['region_name'] = isystem.region_name
-    ctx.instance.runtime_properties['latitude'] = \
-        getattr(isystem, 'latitude', None)
-    ctx.instance.runtime_properties['longitude'] = \
-        getattr(isystem, 'longitude', None)
-    ctx.instance.runtime_properties['distributed_cloud_role'] = \
-        isystem.distributed_cloud_role
-
+    ctx.instance.runtime_properties.update(isystem.to_dict())
     ihosts = ctx.instance.runtime_properties.get('ihosts')
     for ihost in isystem.ihosts:
         if ihost.uuid not in ihosts:
@@ -45,3 +32,4 @@ def poststart(resource, ctx):
                 'subfunctions': ihost.subfunctions,
             }
     ctx.instance.runtime_properties['ihosts'] = ihosts
+    ctx.instance.update()

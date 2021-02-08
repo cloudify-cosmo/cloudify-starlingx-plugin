@@ -43,16 +43,19 @@ def with_starlingx_resource(class_decl):
                 resource = class_decl(
                     client_config=ctx_node.properties.get('client_config'),
                     resource_config=ctx_node.properties.get(
-                        'resource_config')
+                        'resource_config'),
+                    logger=ctx.logger
                 )
                 func(resource, ctx)
             except Exception as errors:
                 _, _, tb = sys.exc_info()
+                if hasattr(errors, 'message'):
+                    message = errors.message
+                else:
+                    message = '//NO MESSAGE'
                 raise NonRecoverableError(
                     'Failure while trying to run operation:'
-                    '{0}: {1}'.format(ctx.operation.name, errors.message),
+                    '{0}: {1}'.format(ctx.operation.name, message),
                     causes=[exception_to_error_cause(errors, tb)])
         return wrapper_inner
     return wrapper_outer
-
-
