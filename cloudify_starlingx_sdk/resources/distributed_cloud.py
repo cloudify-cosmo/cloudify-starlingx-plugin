@@ -37,25 +37,50 @@ class SubcloudResource(DistributedCloudResource):
     def list(self):
         return self.connection.subcloud_manager.list_subclouds()
 
-    def get(self):
+    def _get(self, resource_id):
         result = self.connection.subcloud_manager.subcloud_detail(
-            self.resource_id)
+            resource_id)
         # I am not sure why they return a list here.
-        if 0 == len(result) > 1:
+        if 1 > len(result) < 1:
             return
         return result[0]
 
+    def get(self):
+        return self._get(self.resource_id)
+
+    def _get_detail(self, name):
+        result = self.connection.subcloud_manager.subcloud_additional_details(
+            name)
+        # I am not sure why they return a list here.
+        if 1 > len(result) < 1:
+            return
+        return result[0]
+
+    def get_detail(self):
+        return self._get_detail(self.resource.name)
+
     @property
     def oam_floating_ip(self):
-        return self.resource.oam_floating_ip
+        resource = self.get_detail()
+        return resource.oam_floating_ip
+
+    def get_oam_floating_ip(self, name):
+        resource = self._get_detail(name)
+        return resource.oam_floating_ip
 
     def to_dict(self):
+        return self.get_subcloud_as_dict(self.resource)
+
+    def get_subcloud_as_dict(self, resource):
         return {
-            'external_id': self.resource_id,
-            'name': self.resource.name,
-            'description': self.resource.description,
-            'location': self.resource.location,
-            'group_id': self.resource.group_id,
-            'oam_floating_ip': self.resource.oam_floating_ip,
-            'management_state': self.resource.management_state
+            'external_id': resource.subcloud_id,
+            'name': resource.name,
+            'description': resource.description,
+            'location': resource.location,
+            'group_id': resource.group_id,
+            'oam_floating_ip': self.get_oam_floating_ip(resource.name),
+            'management_state': resource.management_state
         }
+
+    def get_subcloud_from_name(self, name):
+        return self._get(name)

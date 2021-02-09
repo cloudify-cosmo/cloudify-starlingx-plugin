@@ -114,7 +114,8 @@ class ISystemResource(ConfigurationResource):
                 client_config=self.convert_client_config_to_distcloud(
                     self.client_config),
                 resource_config=self.config)
-        return self._subcloud_resource
+        return self._subcloud_resource.get_subcloud_from_name(
+            self.resource.name)
 
     @property
     def oam_floating_ip(self):
