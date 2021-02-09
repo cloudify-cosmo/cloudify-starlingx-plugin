@@ -45,13 +45,17 @@ class SubcloudResource(DistributedCloudResource):
             return
         return result[0]
 
+    @property
+    def oam_floating_ip(self):
+        return self.resource.oam_floating_ip
+
     def to_dict(self):
         return {
-            'external_id': self.resource_id
+            'external_id': self.resource_id,
             'name': self.resource.name,
             'description': self.resource.description,
             'location': self.resource.location,
             'group_id': self.resource.group_id,
             'oam_floating_ip': self.resource.oam_floating_ip,
-            'management_state': self.management_state
+            'management_state': self.resource.management_state
         }

@@ -85,42 +85,125 @@ data_types:
           but will override other values in the client config.
         default: {}
 
-  cloudify.types.starlingx.Controller:
-    properties: {}
+  cloudify.types.startlingx.System:
+    properties: &system_defaults
+      uuid:
+        type: string
+        description: The system unique system UUID. NOT USED. Prefer to use the resource_id node property.
+        default: ''
+      name:
+        type: string
+        description: The human readable name.
+      description:
+        type: string
+        description: Free text description of the system.
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
+      location:
+        type: string
+        description: Textual description of the system.
+        default: ''
+      latitude:
+        type: string
+        description: Geo latitude
+        default: ''
+      longitude:
+        type: string
+        description: Geo longitude.
+        default: ''
+
+  cloudify.types.starlingx.StandaloneSystem:
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: null
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
+
+
+  cloudify.types.starlingx.SystemController:
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: SystemController
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+        default: Standard
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
 
   cloudify.types.starlingx.Subcloud:
-    properties: {}
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: Subcloud
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
 
 node_types:
 
-  cloudify.nodes.starlingx.Controller:
+  cloudify.nodes.starlingx.System:
     derived_from: cloudify.nodes.Root
     properties:
       <<: *external_resource
       <<: *client_config
       resource_config:
-        type: cloudify.types.starlingx.Controller
+        type: cloudify.types.startlingx.System
     interfaces:
       cloudify.interfaces.lifecycle:
         poststart:
           implementation: starlingx.starlingx_plugin.resources.controller.poststart
 
-
-  cloudify.nodes.starlingx.Subcloud:
-    derived_from: cloudify.nodes.Root
+  cloudify.nodes.starlingx.StandaloneSystem:
+    derived_from: cloudify.nodes.starlingx.System
     properties:
       <<: *external_resource
       <<: *client_config
       resource_config:
-        type: cloudify.types.starlingx.Subcloud
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        poststart:
-          implementation: starlingx.starlingx_plugin.resources.subcloud.poststart
+        type: cloudify.types.starlingx.StandaloneSystem
+
+  cloudify.nodes.starlingx.SystemController:
+    derived_from: cloudify.nodes.starlingx.System
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.startlingx.SystemController
+
+  cloudify.nodes.starlingx.Subcloud:
+    derived_from: cloudify.nodes.starlingx.System
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.startlingx.Subcloud
 
 relationships:
 
-  cloudify.relationships.starlingx.subcloud_connected_to_controller:
+  cloudify.relationships.starlingx.subcloud_connected_to_system_controller:
     derived_from: cloudify.relationships.connected_to
     source_interfaces:
       cloudify.interfaces.relationship_lifecycle:
