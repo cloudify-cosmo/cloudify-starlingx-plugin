@@ -28,8 +28,8 @@ class StarlingXResource(object):
     name_key = 'name'
 
     def __init__(self, client_config, resource_config=None, logger=None):
-        self.client_config = client_config
         self.logger = logger
+        self.client_config = self.cleanup_config(client_config)
         self.config = resource_config or {}
         self.resource_id = self.get_identifier()
         self.name = self.config.get(self.name_key)
@@ -43,14 +43,13 @@ class StarlingXResource(object):
     def auth_url(self):
         return self.client_config.get('auth_url')
 
-    @property
-    def domain_auth_sets(self):
-        return [
-            {'user_domain_id', 'project_domain_id'},
-            {'user_domain_name', 'project_domain_name'},
-            {'user_domain_id', 'project_domain_name'},
-            {'user_domain_name', 'project_domain_id'},
-        ]
+    @staticmethod
+    def cleanup_config(config):
+        kwargs = config.pop('kwargs', {})
+        config.update(kwargs)
+        os_kwargs = config.pop('os_kwargs', {})
+        config.update(os_kwargs)
+        return config
 
     def list(self):
         raise NotImplementedError()

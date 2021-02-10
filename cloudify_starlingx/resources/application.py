@@ -13,16 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ..utils import update_prop_resource
 from ..decorators import with_starlingx_resource
 from cloudify_starlingx_sdk.resources.configuration import ApplicationResource
 
 
 @with_starlingx_resource(ApplicationResource)
 def poststart(resource, ctx):
-    app = resource.get()
-    ctx.instance.runtime_properties['external_id'] = app.resource_id
-    ctx.instance.runtime_properties['name'] = app.name
-    ctx.instance.runtime_properties['app_version'] = app.app_version
-    ctx.instance.runtime_properties['manifest_name'] = app.manifest_name
-    ctx.instance.runtime_properties['manifest_file'] = app.manifest_file
-    ctx.instance.update()
+    update_prop_resource(ctx.instance, resource)

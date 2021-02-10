@@ -32,7 +32,8 @@ class StarlingXResourceTest(StarlingXCommonBase):
             resource_config={
                 'name': 'foo-name',
                 'uuid': '00000000-0000-0000-0000-000000000000'
-            }
+            },
+            logger=unittest.mock.Mock()
         )
 
         self.assertEqual(resource.resource_id,

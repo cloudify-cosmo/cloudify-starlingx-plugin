@@ -17,14 +17,8 @@ from cloudify.constants import NODE_INSTANCE
 
 from unittest.mock import patch
 from . import StarlingXTestBase
-from ..resources.subcloud import poststart
+from ..resources.application import poststart
 
 
-class StarlingXSubcloudTest(StarlingXTestBase):
-
-    @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
-    @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
-    def test_poststart(self, _, __):
-        ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
-        poststart(ctx=ctx)
-        self.assertIn('subcloud', ctx.instance.runtime_properties.keys())
+class StarlingXWorkflowTest(StarlingXTestBase):
+    pass

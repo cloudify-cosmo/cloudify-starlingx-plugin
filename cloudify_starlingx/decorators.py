@@ -39,13 +39,14 @@ def with_starlingx_resource(class_decl):
             # the context could be belongs to relationship context or actual
             # node context
             ctx_node = resolve_ctx(ctx)
+            client_config = ctx_node.node.properties.get('client_config')
+            resource_config = ctx_node.node.properties.get('resource_config')
+            ctx.logger.info('client_config {}'.format(client_config))
             try:
                 resource = class_decl(
-                    client_config=ctx_node.properties.get('client_config'),
-                    resource_config=ctx_node.properties.get(
-                        'resource_config'),
-                    logger=ctx.logger
-                )
+                    client_config=client_config,
+                    resource_config=resource_config,
+                    logger=ctx.logger)
                 func(resource, ctx)
             except Exception as errors:
                 _, _, tb = sys.exc_info()

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from .test_common import StarlingXCommonBase
 from ..resources.distributed_cloud import SubcloudResource
@@ -27,7 +27,8 @@ class StarlingXDistributedCloudTest(StarlingXCommonBase):
             client_config={'foo': 'foo', 'bar': 'bar'},
             resource_config={
                 'name': 'foo-name',
-            }
+            },
+            logger=Mock()
         )
 
         self.assertEqual(resource.resource_id,

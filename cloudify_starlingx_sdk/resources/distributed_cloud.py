@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from copy import deepcopy
+
 from ..common import StarlingXResource
 from dcmanagerclient.api import client
 
@@ -21,7 +23,15 @@ class DistributedCloudResource(StarlingXResource):
 
     @property
     def connection(self):
-        return client(**self.client_config)
+        creds = deepcopy(self.client_config)
+        for key, val in list(creds.items()):
+            if key.startswith('os_'):
+                creds[key.lsplit('os_')[0]] = val
+            if 'password' in creds:
+                creds['api_key'] = creds.pop('password')
+        if 'api_version' in creds:
+            del creds['api_version']
+        return client(**creds)
 
     def list(self):
         raise NotImplementedError()
@@ -41,9 +51,9 @@ class SubcloudResource(DistributedCloudResource):
         result = self.connection.subcloud_manager.subcloud_detail(
             resource_id)
         # I am not sure why they return a list here.
-        if 1 > len(result) < 1:
-            return
-        return result[0]
+        if len(result) == 1:
+            return result[0]
+        return result
 
     def get(self):
         return self._get(self.resource_id)
@@ -52,9 +62,9 @@ class SubcloudResource(DistributedCloudResource):
         result = self.connection.subcloud_manager.subcloud_additional_details(
             name)
         # I am not sure why they return a list here.
-        if 1 > len(result) < 1:
-            return
-        return result[0]
+        if len(result) == 1:
+            return result[0]
+        return result
 
     def get_detail(self):
         return self._get_detail(self.resource.name)
@@ -73,13 +83,15 @@ class SubcloudResource(DistributedCloudResource):
 
     def get_subcloud_as_dict(self, resource):
         return {
-            'external_id': resource.subcloud_id,
-            'name': resource.name,
-            'description': resource.description,
-            'location': resource.location,
-            'group_id': resource.group_id,
-            'oam_floating_ip': self.get_oam_floating_ip(resource.name),
-            'management_state': resource.management_state
+            resource.subcloud_id: {
+                'external_id': resource.subcloud_id,
+                'name': resource.name,
+                'description': resource.description,
+                'location': resource.location,
+                'group_id': resource.group_id,
+                'oam_floating_ip': self.get_oam_floating_ip(resource.name),
+                'management_state': resource.management_state
+            }
         }
 
     def get_subcloud_from_name(self, name):

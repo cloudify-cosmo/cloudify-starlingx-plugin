@@ -27,7 +27,6 @@ class StarlingXControllerTest(StarlingXTestBase):
         ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
         poststart(ctx=ctx)
         expected = {
-            'external_id',
             'name',
             'location',
             'description',
@@ -38,4 +37,9 @@ class StarlingXControllerTest(StarlingXTestBase):
             'longitude',
             'distributed_cloud_role'}
         self.assertTrue(
-            expected.issubset(set(ctx.instance.runtime_properties.keys())))
+            expected.issubset(
+                set(
+                    ctx.instance.runtime_properties['resource_config'].keys()
+                )
+            )
+        )
