@@ -29,4 +29,4 @@ def poststart(resource, ctx):
 
     update_prop_resource(ctx.instance, resource)
     update_prop_resources(ctx.instance, resource.host_resources, 'hosts')
-    update_prop_resource(ctx.instance, resource.subcloud_resource.to_dict(), 'subcloud')
+    update_prop_resource(ctx.instance, resource.subcloud_resource, 'subcloud')

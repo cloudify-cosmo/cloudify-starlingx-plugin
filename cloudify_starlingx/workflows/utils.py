@@ -20,6 +20,19 @@ from cloudify.manager import get_rest_client
 from cloudify.exceptions import NonRecoverableError
 
 
+def with_rest_client(func):
+    """
+    :param class_decl: This is a class for the starlingx resource need to be
+    invoked
+    :return: a wrapper object encapsulating the invoked function
+    """
+
+    def wrapper_inner(*args, **kwargs):
+        kwargs['rest_client'] = get_rest_client()
+        return func(**kwargs)
+    return wrapper_inner
+
+
 def get_instances_of_nodes(node_id=None, node_type=None, deployment_id=None):
     """ Get instances of nodes either by node ID or node type.
 
@@ -33,20 +46,22 @@ def get_instances_of_nodes(node_id=None, node_type=None, deployment_id=None):
         controller_node = wtx.get_node(node_id)
         return controller_node.instances
     elif node_type:
-        return get_node_instances_by_type(node_type, deployment_id)
+        return get_node_instances_by_type(
+            node_type=node_type, deployment_id=deployment_id)
     else:
         raise NonRecoverableError('No node_id and no node_type provided.')
 
 
-def get_node_instances_by_type(node_type, deployment_id):
+@with_rest_client
+def get_node_instances_by_type(node_type, deployment_id, rest_client):
     """Filter node instances by type.
 
+    :param rest_client: The rest client.
     :param node_type: the node type that we wish to filter.
     :param deployment_id: The deployment ID.
     :return list: a list of node instances.
     """
 
-    rest_client = get_rest_client()
     node_instances = []
     for node in rest_client.nodes.list(deployment_id=deployment_id):
         if node_type in node.type_hierarchy:
@@ -56,11 +71,14 @@ def get_node_instances_by_type(node_type, deployment_id):
     return node_instances
 
 
-def update_runtime_properties(instance,
+@with_rest_client
+def update_runtime_properties(rest_client,
+                              instance,
                               resources,
-                              prop_name=None):
+                              prop_name):
     """
 
+    :param rest_client: The rest client.
     :param instance: The node instance to update.
     :param resources: A list of resources to pull.
     :param prop_name: The property on the instance to update.
@@ -68,12 +86,11 @@ def update_runtime_properties(instance,
     """
 
     prop_name = prop_name or 'subcloud'
-    rest_client = get_rest_client()
 
     for resource in resources:
         props = deepcopy(instance.runtime_properties)
         prop = props.get(prop_name, {})
-        if resource.id not in prop:
+        if resource.resource_id not in prop:
             prop.update({resource.resource_id: resource.to_dict()})
         props[prop_name] = prop
         rest_client.nodeinstances.update(instance.id,
@@ -91,12 +108,17 @@ def desecretize_client_config(config):
 def check_for_secret_value(prop):
     if isinstance(prop, dict):
         if 'get_secret' in prop:
-            return get_secret(prop.get('get_secret'))
+            return get_secret(secret_name=prop.get('get_secret'))
     return prop
 
 
-def get_secret(secret_name):
-    rest_client = get_rest_client()
+@with_rest_client
+def get_secret(rest_client, secret_name):
     secret = rest_client.secrets.get(secret_name)
     return secret.value
 
+
+@with_rest_client
+def create_deployment(rest_client, inputs, blueprint_id, deployment_id=None):
+    rest_client.deployments.create(
+        blueprint_id, deployment_id or blueprint_id, inputs)

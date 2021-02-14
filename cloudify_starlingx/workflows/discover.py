@@ -24,11 +24,13 @@ from dcmanagerclient.exceptions import APIException
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 from .utils import (
+    create_deployment,
     get_instances_of_nodes,
     update_runtime_properties,
     desecretize_client_config)
 
 CONTROLLER_TYPE = 'cloudify.nodes.starlingx.SystemController'
+
 
 @workflow
 def discover_subclouds(node_id=None, ctx=None, **_):
@@ -89,3 +91,19 @@ def discover_subcloud(controller_node):
         else:
             wtx.logger.error('No subclouds identified. {0}'.format(message))
         return []
+
+
+@workflow
+def deploy_subcloud(inputs, blueprint_id, deployment_id=None, ctx=None):
+    ctx = ctx or wtx
+    ctx.logger.info(
+        'Creating Deployment {_did} from blueprint {_bid}.'.format(
+            _bid=blueprint_id, _did=deployment_id or blueprint_id))
+    create_deployment(inputs, blueprint_id, deployment_id)
+
+
+@workflow
+def discover_and_deploy(node_id=None, ctx=None):
+    ctx = ctx or wtx
+    discover_subclouds(node_id, ctx)
+    

@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
-from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
 
