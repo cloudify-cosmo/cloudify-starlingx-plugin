@@ -45,12 +45,6 @@ setup(
         'distributedcloud-client',
         'cgtsclient',
         'httplib2',
-        # 'distributedcloud-client @ '
-        # 'git+https://opendev.org/starlingx/distcloud-client.git'
-        # '@master#subdirectory=distributedcloud-client',
-        # 'cgtsclient @ '
-        # 'git+https://github.com/cloudify-cosmo/starlingx.config.git'
-        # '@master#subdirectory=sysinv/cgts-client/cgts-client',
         'cloudify-common',
     ]
 )

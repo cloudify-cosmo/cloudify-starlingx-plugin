@@ -16,10 +16,13 @@ dsl_definitions:
 
   client_config: &client_config
     auth_url: { get_secret: openstack_auth_url }
+    region_name: { get_secret: openstack_region_name }
+    project_name: { get_secret: openstack_project_name }
     username: { get_secret: openstack_username }
     api_key: { get_secret: openstack_password }
-    project_name: { get_secret: openstack_project_name }
-    region_name: { get_secret: openstack_region_name }
+    user_domain_name: { get_secret: user_domain_name }
+    project_domain_name: { get_secret: project_domain_name }
+    project_domain_id: { get_secret: project_domain_id }
 
 node_templates:
 

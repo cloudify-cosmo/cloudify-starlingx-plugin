@@ -32,9 +32,11 @@ class ConfigurationResource(StarlingXResource):
         creds = deepcopy(self.client_config)
         for key, val in list(creds.items()):
             if not key.startswith('os_'):
-                creds['os_{key}'.format(key=key)] = val
+                creds['os_{key}'.format(key=key)] = creds.pop(key)
         if 'os_api_key' in creds:
             creds['os_password'] = creds.pop('os_api_key')
+        if 'password' in creds:
+            del creds['password']
         creds['api_version'] = 1
         return get_client(**creds)
 
@@ -52,6 +54,7 @@ class SystemResource(ConfigurationResource):
         super().__init__(*args, **kwargs)
         self._host_resources = None
         self._subcloud_resource = None
+        self._subcloud_resources = None
 
     def list(self):
         return self.connection.isystem.list()
@@ -66,6 +69,13 @@ class SystemResource(ConfigurationResource):
             if host.isystem_uuid == self.resource_id:
                 host_list.append(host)
         return host_list
+
+    @property
+    def subclouds(self):
+        subclouds = []
+        for subcloud in self.subcloud_resource.list():
+            subclouds.append(subcloud)
+        return subclouds
 
     @property
     def region_name(self):
@@ -121,6 +131,19 @@ class SystemResource(ConfigurationResource):
                                  logger=self.logger))
             self._host_resources = host_resources
         return self._host_resources
+
+    @property
+    def subcloud_resources(self):
+        subcloud_resources = []
+        if not self._subcloud_resources:
+            for subcloud in self.subclouds:
+                subcloud_resources.append(
+                    SubcloudResource(
+                        client_config=self.client_config,
+                        resource_config={'subcloud_id': subcloud.subcloud_id},
+                        logger=self.logger))
+            self._subcloud_resources = subcloud_resources
+        return self._subcloud_resources
 
     @property
     def oam_floating_ip(self):

@@ -26,12 +26,12 @@ class DistributedCloudResource(StarlingXResource):
         creds = deepcopy(self.client_config)
         for key, val in list(creds.items()):
             if key.startswith('os_'):
-                creds[key.lsplit('os_')[0]] = val
+                creds[key.lsplit('os_')[0]] = creds.pop(key)
             if 'password' in creds:
                 creds['api_key'] = creds.pop('password')
         if 'api_version' in creds:
             del creds['api_version']
-        return client(**creds)
+        return client.client(**creds)
 
     def list(self):
         raise NotImplementedError()

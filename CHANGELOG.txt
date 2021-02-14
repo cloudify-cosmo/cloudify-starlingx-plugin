@@ -2,3 +2,4 @@
  - Support controller, app, and subcloud types.
  - Perform read/GET operation on resources in poststart operation.
  - Support subcloud depends on controller relationship.
+ - Discover subcloud workflow

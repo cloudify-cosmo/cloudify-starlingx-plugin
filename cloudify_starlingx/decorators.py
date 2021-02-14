@@ -41,7 +41,6 @@ def with_starlingx_resource(class_decl):
             ctx_node = resolve_ctx(ctx)
             client_config = ctx_node.node.properties.get('client_config')
             resource_config = ctx_node.node.properties.get('resource_config')
-            ctx.logger.info('client_config {}'.format(client_config))
             try:
                 resource = class_decl(
                     client_config=client_config,
@@ -53,7 +52,7 @@ def with_starlingx_resource(class_decl):
                 if hasattr(errors, 'message'):
                     message = errors.message
                 else:
-                    message = '//NO MESSAGE'
+                    message = ''
                 raise NonRecoverableError(
                     'Failure while trying to run operation:'
                     '{0}: {1}'.format(ctx.operation.name, message),
