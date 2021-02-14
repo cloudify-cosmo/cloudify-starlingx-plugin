@@ -2,40 +2,36 @@ tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
   - http://www.getcloudify.org/spec/cloudify/4.5.5/types.yaml
-  - plugin:cloudify-openstack-plugin
+  - plugin:cloudify-starlingx-plugin
 
 inputs:
 
   controller_uuid:
     type: string
 
-  subcloud_id:
+  controller_name:
     type: string
 
 dsl_definitions:
 
   client_config: &client_config
     auth_url: { get_secret: openstack_auth_url }
-    username: { get_secret: openstack_username }
-    password: { get_secret: openstack_password }
-    project_name: { get_secret: openstack_project_name }
     region_name: { get_secret: openstack_region_name }
+    project_name: { get_secret: openstack_project_name }
+    username: { get_secret: openstack_username }
+    api_key: { get_secret: openstack_password }
+    user_domain_name: { get_secret: user_domain_name }
+    project_domain_name: { get_secret: project_domain_name }
+    project_domain_id: { get_secret: project_domain_id }
 
 node_templates:
 
   system_controller:
-    type: cloudify.nodes.starlingx.Controller
+    type: cloudify.nodes.starlingx.SystemController
     properties:
       client_config: *client_config
       resource_config:
         uuid: { get_input: controller_uuid }
-
-  subcloud:
-    type: cloudify.nodes.starlingx.Subcloud
-    properties:
-      client_config: *client_config
-      resource_config:
-        subcloud_id: { get_input: subcloud_id }
-    relationships:
-    - type: cloudify.relationships.starlingx.subcloud_connected_to_controller
-      target: system_controller
+        name: { get_input: controller_name }
+        description: "Test description"
+        system_mode: duplex

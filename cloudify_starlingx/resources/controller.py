@@ -14,22 +14,11 @@
 # limitations under the License.
 
 from ..decorators import with_starlingx_resource
-from cloudify_starlingx_sdk.resources.configuration import ISystemResource
+from ..utils import update_prop_resource, update_prop_resources
+from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 
-@with_starlingx_resource(ISystemResource)
+@with_starlingx_resource(SystemResource)
 def poststart(resource, ctx):
-    isystem = resource.get()
-    ctx.instance.runtime_properties.update(isystem.to_dict())
-    ihosts = ctx.instance.runtime_properties.get('ihosts')
-    for ihost in isystem.ihosts:
-        if ihost.uuid not in ihosts:
-            ihosts[ihost.uuid] = {
-                'hostname': ihost.hostname,
-                'mgmt_ip': ihost.mgmt_ip,
-                'id': ihost.id,
-                'personality': ihost.personality,
-                'subfunctions': ihost.subfunctions,
-            }
-    ctx.instance.runtime_properties['ihosts'] = ihosts
-    ctx.instance.update()
+    update_prop_resource(ctx.instance, resource)
+    update_prop_resources(ctx.instance, resource.host_resources, 'hosts')

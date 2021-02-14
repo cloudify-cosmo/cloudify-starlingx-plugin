@@ -14,15 +14,11 @@
 # limitations under the License.
 
 from ..decorators import with_starlingx_resource
-from cloudify_starlingx_sdk.resources.distributed_cloud import SubcloudResource
+from ..utils import update_prop_resource, update_prop_resources
+from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 
-def preconfigure(_, ctx):
-    ctx.source.instance.runtime_properties['controller_region_name'] = \
-        ctx.target.node.properties['client_config']['region_name']
-
-
-@with_starlingx_resource(SubcloudResource)
+@with_starlingx_resource(SystemResource)
 def poststart(resource, ctx):
     """ Populate the subcloud resource with relevant data.
 
@@ -30,8 +26,7 @@ def poststart(resource, ctx):
     :param ctx:
     :return:
     """
-    resource.client_config['region_name'] = \
-        ctx.instance.runtime_properties['controller_region_name']
-    subcloud = resource.get()
-    ctx.instance.runtime_properties.update(subcloud.to_dict())
-    ctx.instance.update()
+
+    update_prop_resource(ctx.instance, resource)
+    update_prop_resources(ctx.instance, resource.host_resources, 'hosts')
+    update_prop_resource(ctx.instance, resource.subcloud_resource, 'subcloud')

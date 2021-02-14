@@ -13,34 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
+from cloudify.constants import NODE_INSTANCE
 
 from unittest.mock import patch
 from . import StarlingXTestBase
-from ..resources.subcloud import poststart, preconfigure
+from ..resources.subcloud import poststart
 
 
 class StarlingXSubcloudTest(StarlingXTestBase):
 
-    def test_preconfigure(self):
-        ctx = self.get_mock_ctx(reltype=RELATIONSHIP_INSTANCE)
-        preconfigure(None, ctx=ctx)
-        self.assertEqual(
-            ctx.source.instance.runtime_properties['controller_region_name'],
-            'taco')
-
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
-    def test_poststart(self, _):
+    @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
+    def test_poststart(self, _, __):
         ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
-        ctx.instance.runtime_properties['controller_region_name'] = 'ball'
         poststart(ctx=ctx)
-        expected = {
-            'external_id',
-            'name',
-            'location',
-            'description',
-            'group_id',
-            'oam_floating_ip',
-            'management_state'}
-        self.assertTrue(
-            expected.issubset(set(ctx.instance.runtime_properties.keys())))
+        self.assertIn('subcloud', ctx.instance.runtime_properties.keys())

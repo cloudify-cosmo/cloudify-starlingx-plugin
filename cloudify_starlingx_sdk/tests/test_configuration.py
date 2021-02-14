@@ -13,22 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from .test_common import StarlingXCommonBase
-from ..resources.configuration import (ISystemResource, ApplicationResource)
+from ..resources.configuration import (SystemResource, ApplicationResource)
 
 
 class StarlingXDistributedCloudTest(StarlingXCommonBase):
 
     @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
-    def test_isystem_resource_instance(self, _):
-        resource = ISystemResource(
+    def test_system_resource_instance(self, _):
+        resource = SystemResource(
             client_config={'foo': 'foo', 'bar': 'bar'},
             resource_config={
                 'name': 'foo-name',
                 'uuid': '00000000-0000-0000-0000-000000000000'
-            }
+            },
+            logger=Mock()
         )
 
         self.assertEqual(resource.resource_id,

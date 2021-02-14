@@ -34,9 +34,9 @@ data_types:
         type: string
         description: Your OpenStack username.
         required: false
-      password:
+      api_key:
         type: string
-        description: Your OpenStack password.
+        description: Your OpenStack api_key.
         required: false
       project_name:
         type: string
@@ -66,10 +66,6 @@ data_types:
         description: Project domain name to operate on.
         type: string
         required: false
-      logging:
-        description: Logging configuration.
-        type: cloudify.types.openstack.Logging
-        required: false
       insecure:
         description: If true, SSL validation is skipped.
         type: boolean
@@ -85,52 +81,127 @@ data_types:
           but will override other values in the client config.
         default: {}
 
-  cloudify.types.starlingx.Controller:
-    properties: {}
+  cloudify.types.starlingx.System:
+    properties: &system_defaults
+      uuid:
+        type: string
+        description: The system unique system UUID. NOT USED. Prefer to use the resource_id node property.
+        default: ''
+      name:
+        type: string
+        description: The human readable name.
+      description:
+        type: string
+        description: Free text description of the system.
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
+      location:
+        type: string
+        description: Textual description of the system.
+        default: ''
+      latitude:
+        type: string
+        description: Geo latitude
+        default: ''
+      longitude:
+        type: string
+        description: Geo longitude.
+        default: ''
+
+  cloudify.types.starlingx.StandaloneSystem:
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: null
+
+  cloudify.types.starlingx.SystemController:
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: SystemController
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+        default: Standard
 
   cloudify.types.starlingx.Subcloud:
-    properties: {}
+    properties:
+      <<: *system_defaults
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: Subcloud
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+        default: null
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
+        default: null
 
 node_types:
 
-  cloudify.nodes.starlingx.Controller:
+  cloudify.nodes.starlingx.System:
     derived_from: cloudify.nodes.Root
     properties:
       <<: *external_resource
       <<: *client_config
       resource_config:
-        type: cloudify.types.starlingx.Controller
+        type: cloudify.types.starlingx.System
     interfaces:
       cloudify.interfaces.lifecycle:
         poststart:
-          implementation: starlingx.starlingx_plugin.resources.controller.poststart
+          implementation: starlingx.cloudify_starlingx.resources.controller.poststart
 
+  cloudify.nodes.starlingx.StandaloneSystem:
+    derived_from: cloudify.nodes.starlingx.System
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.starlingx.StandaloneSystem
+
+  cloudify.nodes.starlingx.SystemController:
+    derived_from: cloudify.nodes.starlingx.System
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.starlingx.SystemController
 
   cloudify.nodes.starlingx.Subcloud:
-    derived_from: cloudify.nodes.Root
+    derived_from: cloudify.nodes.starlingx.System
     properties:
       <<: *external_resource
       <<: *client_config
       resource_config:
         type: cloudify.types.starlingx.Subcloud
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        poststart:
-          implementation: starlingx.starlingx_plugin.resources.subcloud.poststart
 
 relationships:
 
-  cloudify.relationships.starlingx.subcloud_connected_to_controller:
+  cloudify.relationships.starlingx.subcloud_connected_to_system_controller:
     derived_from: cloudify.relationships.connected_to
     source_interfaces:
       cloudify.interfaces.relationship_lifecycle:
         preconfigure:
-          implementation: starlingx.starlingx_plugin.resources.subcloud.preconfigure
+          implementation: starlingx.cloudify_starlingx.resources.subcloud.preconfigure
 
 workflows:
 
   discover_subclouds:
-    mapping: starlingx.starlingx_plugin.workflows.discover.discover_subclouds
+    mapping: starlingx.cloudify_starlingx.workflows.discover.discover_subclouds
     parameters:
       node_id:
         description: The name of the node template of the cloudify.nodes.starlingx.Controller node, whose subclouds you wish to discover.

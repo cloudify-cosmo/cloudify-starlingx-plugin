@@ -35,8 +35,6 @@ SECRETS_TO_CREATE = {
     'openstack_project_domain_name': False,
 }
 
-prepare_test(secrets=SECRETS_TO_CREATE, plugin_test=True)
-
 blueprint_list = ['examples/blueprint.yaml']
 
 
@@ -47,7 +45,8 @@ def blueprint_examples(request):
         basic_blueprint_test(
             request.param,
             test_name,
-            inputs=None,
+            inputs={'controller_uuid': '',
+                    'controller_name': ''},
         )
     except:
         cleanup_on_failure(test_name)

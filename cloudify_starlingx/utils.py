@@ -59,3 +59,16 @@ def resolve_ctx(_ctx):
             'Falling back to {0}. This indicates a problem.'.format(
                 NODE_INSTANCE, RELATIONSHIP_INSTANCE))
     return _ctx
+
+
+def update_prop_resource(ctx_instance, resource, config_key=None):
+    config_key = config_key or 'resource_config'
+    resource_config = ctx_instance.runtime_properties.get(config_key, {})
+    resource_config.update(resource.to_dict())
+    ctx_instance.runtime_properties[config_key] = resource_config
+    ctx_instance.update()
+
+
+def update_prop_resources(ctx_instance, resources, config_key=None):
+    for resource in resources:
+        update_prop_resource(ctx_instance, resource, config_key)
