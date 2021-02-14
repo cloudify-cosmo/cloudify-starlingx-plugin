@@ -11,9 +11,6 @@ checkout:
 
 
 executors:
-  py27:
-    docker:
-      - image: circleci/python:2.7
 
   py36:
     docker:
@@ -44,36 +41,10 @@ commands:
           command: /home/circleci/.local/bin/tox -e flake8
       - run:
          name: Run nosetest
-         command: /home/circleci/.local/bin/tox -e nosetests
+         command: python -m pytest
 
-  check_py3_compat:
-    steps:
-      - run:
-          name: install futurize
-          command: pip install future --user
-      - run:
-          name: remove compat module
-          command: rm openstack_sdk/_compat.py
-      - run:
-          name: find python3-incompatible code
-          command: |
-            FUTURIZE="futurize ."
-            while read line; do
-              [[ "$line" =~ ^#.* ]] && continue
-              FUTURIZE="${FUTURIZE} ${line}"
-            done<.circleci/py3fixers
-            echo "Running: $FUTURIZE"
-            $FUTURIZE>futurize_diffs
-      - run:
-          name: check that there is no python3-incompatible code
-          command: |
-            if [[ -s futurize_diffs ]]; then
-              echo "Python-3-incompatible code found"
-              cat futurize_diffs
-              exit 1
-            fi
 
-  generate_py27py36_wagon:
+  generate_py36_wagon:
     steps:
       - run:
           name: Create Workspace Build directory.
@@ -82,8 +53,8 @@ commands:
           name: Build py27py36 Wagon
           command: |
               git clone https://github.com/cloudify-cosmo/cloudify-wagon-build-containers.git
-              docker build -t cloudify-centos-7-wagon-builder cloudify-wagon-build-containers/centos_7_py2py3
-              docker run -v ~/project/:/packaging cloudify-centos-7-wagon-builder
+              docker build -t cloudify-centos-7-wagon-builder-py3 cloudify-wagon-build-containers/centos_7_py3
+              docker run -v ~/project/:/packaging cloudify-centos-7-wagon-builder-py3
       - run:
           name: copy wagon to workspace
           command: cp *.wgn workspace/build/
@@ -92,7 +63,7 @@ commands:
           paths:
             - build/*
 
-  generate_rhel_py27py36_wagon:
+  generate_rhel_py36_wagon:
     steps:
       - run:
           name: Create Workspace Build directory.
@@ -101,8 +72,8 @@ commands:
           name: Build RHEL py27py36 Wagon
           command: |
               git clone https://github.com/cloudify-cosmo/cloudify-wagon-build-containers.git
-              docker build -t cloudify-redhat-7-wagon-builder cloudify-wagon-build-containers/redhat_7_py2py3 --build-arg USERNAME="$USERNAME" --build-arg PASSWORD="$PASSWORD"
-              docker run -v ~/project/:/packaging cloudify-redhat-7-wagon-builder
+              docker build -t cloudify-redhat-7-wagon-builder-py3 cloudify-wagon-build-containers/redhat_7_py3 --build-arg USERNAME="$USERNAME" --build-arg PASSWORD="$PASSWORD"
+              docker run -v ~/project/:/packaging cloudify-redhat-7-wagon-builder-py3
       - run:
           name: copy wagon to workspace
           command: cp *.wgn workspace/build/
@@ -111,98 +82,6 @@ commands:
           paths:
             - build/*
 
-
-  build_archive:
-    steps:
-      - attach_workspace:
-          at: workspace
-      - run:
-          name: Create Workspace Build directory.
-          command: mkdir -p workspace/build
-      - run:
-          name: Build Bundle
-          command: |
-              git clone https://github.com/cloudify-incubator/cloudify-ecosystem-test.git
-              pip install -e cloudify-ecosystem-test
-              python -c 'from ecosystem_cicd_tools import packaging; packaging.build_plugins_bundle_with_workspace()'
-      - persist_to_workspace:
-          root: workspace
-          paths:
-            - build/*
-
-  run_integration_tests_505:
-    steps:
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote --recursive
-      - attach_workspace:
-          at: workspace
-      - run:
-          name: update pip
-          command: pip install -U pip
-      - run:
-          name: install cloudify
-          command: |
-            pip install -r test-requirements.txt
-      - run:
-          name: download manager docker image
-          command: wget http://repository.cloudifysource.org/cloudify/5.0.5/ga-release/cloudify-docker-manager-5.0.5.tar
-      - run:
-          name: load docker image
-          command: docker load -i cloudify-docker-manager-5.0.5.tar
-      - run:
-          name: retain space by dumping the tar
-          command: rm cloudify-docker-manager-5.0.5.tar
-      - run:
-          name: show images
-          command: docker images
-      - run:
-          name: start docker container
-          command: docker run --name cfy_manager -d --restart unless-stopped -v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /run/lock --security-opt seccomp:unconfined --cap-add SYS_ADMIN --network host cloudifyplatform/premium-cloudify-manager-aio
-      - run:
-          name: install local project
-          command: pip install https://github.com/cloudify-incubator/cloudify-ecosystem-test/archive/latest.zip
-      - run: pytest -s .circleci/test_examples.py
-
-  run_integration_tests_510:
-    steps:
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule update --init --recursive --remote
-      - attach_workspace:
-          at: workspace
-      - run:
-          name: update pip
-          command: pip install -U pip
-      - run:
-          name: install cloudify
-          command: |
-            pip install -r test-requirements.txt
-      - run:
-          name: download manager docker image
-          command:  wget http://repository.cloudifysource.org/cloudify/5.1.0/.dev1-release/cloudify-manager-aio-docker-5.1.0.dev1.tar
-      - run:
-          name: load docker image
-          command: docker load -i cloudify-manager-aio-docker-5.1.0.dev1.tar
-      - run:
-          name: retain space by dumping the tar
-          command: rm cloudify-manager-aio-docker-5.1.0.dev1.tar
-      - run:
-          name: show images
-          command: docker images
-      - run:
-          name: start docker container
-          command: docker run --name cfy_manager -d --restart unless-stopped -v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /run/lock --security-opt seccomp:unconfined --cap-add SYS_ADMIN --network host cloudify-manager-aio:latest
-      - run:
-          name: wait for starter
-          command: docker exec -it cfy_manager cfy_manager wait-for-starter
-      - run:
-          name: install local project
-          command: pip install https://github.com/cloudify-incubator/cloudify-ecosystem-test/archive/latest.zip
-      - run: pytest -s .circleci/test_examples.py
 
   release_plugin:
     steps:
@@ -234,39 +113,6 @@ commands:
       - attach_workspace:
           at: workspace
       - run: python .circleci/package_release.py
-
-
-  validate_documentation:
-    steps:
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote --recursive
-      - run:
-          name: Download pip
-          command: curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
-      - run:
-          name: Install pip
-          command: sudo python get-pip.py
-      - run:
-          name: Install virtualenv
-          command: pip install --user virtualenv
-      - run:
-          name: Init virtualenv
-          command: virtualenv env
-      - run:
-          name: install tox
-          command: pip install --user pygithub pyyaml==3.10
-      - run:
-          name: upgrade setuptools
-          command: pip install --upgrade setuptools
-      - run:
-          name: install local project
-          command: pip install https://github.com/cloudify-incubator/cloudify-ecosystem-test/archive/latest.zip
-      - attach_workspace:
-          at: workspace
-      - run: python .circleci/validate_docs.py
 
   validate_version:
     steps:
@@ -301,67 +147,12 @@ commands:
       - run: python .circleci/validate_version.py
 
 
-  merge_docs:
-    steps:
-      - attach_workspace:
-          at: workspace
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote --recursive
-      - run:
-          name: Set Python
-          command: |
-            if ! pyenv -v COMMAND &> /dev/null
-            then
-                echo "pyenv could not be found"
-                exit
-            else
-                pyenv global 3.6.5
-            fi
-      - run:
-          name: Download pip
-          command: curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
-      - run:
-          name: Install pip
-          command: sudo python get-pip.py
-      - run:
-          name: Install virtualenv
-          command: pip install --user virtualenv
-      - run:
-          name: Init virtualenv
-          command: virtualenv env
-      - run:
-          name: install tox
-          command: pip install --user pygithub pyyaml==3.10
-      - run:
-          name: upgrade setuptools
-          command: pip install --upgrade setuptools
-      - run:
-          name: install local project
-          command: pip install https://github.com/cloudify-incubator/cloudify-ecosystem-test/archive/latest.zip
-      - attach_workspace:
-          at: workspace
-      - run: python .circleci/merge_docs.py
-
 jobs:
-
-  unittests_py27:
-    executor: py27
-    steps:
-      - run_unittest
 
   unittests_py36:
     executor: py36
     steps:
       - run_unittest
-
-  py3_compat:
-    executor: py27
-    steps:
-      - checkout
-      - check_py3_compat
 
   validate_version:
     executor: py36
@@ -369,29 +160,17 @@ jobs:
       - checkout
       - validate_version
 
-  validate_documentation:
-    executor: py36
-    steps:
-      - checkout
-      - validate_documentation
-
   wagon:
     executor: wagon_generator
     steps:
       - checkout
-      - generate_py27py36_wagon
+      - generate_py36_wagon
 
   rhel_wagon:
     executor: wagon_generator
     steps:
       - checkout
-      - generate_rhel_py27py36_wagon
-
-  build_bundle:
-    executor: py36
-    steps:
-      - checkout
-      - build_archive
+      - generate_rhel_py36_wagon
 
   release:
     executor: py36
@@ -399,23 +178,12 @@ jobs:
       - checkout
       - release_plugin
 
-  merge_docs:
-    executor: py36
-    steps:
-      - checkout
-      - merge_docs
-
 workflows:
   version: 2
   tests:
     jobs:
-      - py3_compat
-      - unittests_py27
+      - unittests_py36
       - validate_version
-      - validate_documentation
-      - unittests_py36:
-          requires:
-            - py3_compat
       - wagon:
           filters:
             branches:
@@ -424,13 +192,6 @@ workflows:
           filters:
             branches:
               only: /([0-9\.]*\-build|master|dev)/
-      - build_bundle:
-          filters:
-            branches:
-              only: /master/
-          requires:
-            - wagon
-            - rhel_wagon
       - release:
           filters:
             branches:
@@ -439,14 +200,6 @@ workflows:
           requires:
             - wagon
             - rhel_wagon
-            - build_bundle
-      - merge_docs:
-          filters:
-            branches:
-              only: /master/
-          requires:
-            - release
-            - validate_documentation
 
   nightly:
     triggers:
@@ -457,14 +210,4 @@ workflows:
             only:
               - master
     jobs:
-      - py3_compat
-      - unittests_py27
       - unittests_py36
-      - wagon:
-          filters:
-            branches:
-              only: /([0-9\.]*\-build|master|dev)/
-      - rhel_wagon:
-          filters:
-            branches:
-              only: /([0-9\.]*\-build|master|dev)/
