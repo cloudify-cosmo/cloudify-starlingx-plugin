@@ -29,7 +29,7 @@ def with_rest_client(func):
 
     def wrapper_inner(*args, **kwargs):
         kwargs['rest_client'] = get_rest_client()
-        return func(**kwargs)
+        return func(*args, **kwargs)
     return wrapper_inner
 
 
@@ -41,7 +41,6 @@ def get_instances_of_nodes(node_id=None, node_type=None, deployment_id=None):
     :param deployment_id: The ID of a deployment node.
     :return list: A list of node instances.
     """
-
     if node_id:
         controller_node = wtx.get_node(node_id)
         return controller_node.instances
@@ -61,7 +60,6 @@ def get_node_instances_by_type(node_type, deployment_id, rest_client):
     :param deployment_id: The deployment ID.
     :return list: a list of node instances.
     """
-
     node_instances = []
     for node in rest_client.nodes.list(deployment_id=deployment_id):
         if node_type in node.type_hierarchy:

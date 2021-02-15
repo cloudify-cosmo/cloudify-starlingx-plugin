@@ -21,7 +21,7 @@ from ..workflows import utils
 from . import StarlingXTestBase
 
 
-class StarlingXWorkflowTest(StarlingXTestBase):
+class StarlingXWorkflowUtilsTest(StarlingXTestBase):
 
     @patch('cloudify_starlingx.workflows.utils.get_rest_client')
     def test_with_rest_client(self, _):

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from cloudify.exceptions import NonRecoverableError
-from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
+from cloudify.constants import RELATIONSHIP_INSTANCE
 
 from . import StarlingXTestBase
 from ..utils import resolve_ctx, resolve_node_ctx_from_relationship

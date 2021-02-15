@@ -56,26 +56,29 @@ def discover_subclouds(node_id=None, ctx=None, **_):
 
     for controller_node_instance in controller_node_instances:
         # For each node perform discover subcloud process
-        subclouds = discover_subcloud(controller_node_instance)
+        subclouds = discover_subcloud(controller_node_instance, ctx)
         update_runtime_properties(
-            controller_node_instance, subclouds, 'subcloud')
+            instance=controller_node_instance,
+            resources=subclouds,
+            prop_name='subcloud')
 
 
-def discover_subcloud(controller_node):
+def discover_subcloud(controller_node, ctx=None):
     """ For a provided cloudify node object of controller type, we scan for
     related subclouds.
 
     :param controller_node: Cloudify node rest API object.
     :return list: subclouds
     """
-    node = wtx.get_node(node_id=controller_node.node_id)
+    ctx = ctx or wtx
+    node = ctx.get_node(node_id=controller_node.node_id)
     client_config = desecretize_client_config(
             node.properties.get('client_config', {}))
     try:
         return SystemResource(
             client_config=client_config,
             resource_config=node.properties.get('resource_config'),
-            logger=wtx.logger
+            logger=ctx.logger
         ).subcloud_resources
     except APIException as errors:
         _, _, tb = sys.exc_info()
@@ -89,7 +92,7 @@ def discover_subcloud(controller_node):
                 'Failure while trying to discover subclouds:'
                 ': {0}'.format(message))
         else:
-            wtx.logger.error('No subclouds identified. {0}'.format(message))
+            ctx.logger.error('No subclouds identified.')
         return []
 
 
@@ -99,11 +102,44 @@ def deploy_subcloud(inputs, blueprint_id, deployment_id=None, ctx=None):
     ctx.logger.info(
         'Creating Deployment {_did} from blueprint {_bid}.'.format(
             _bid=blueprint_id, _did=deployment_id or blueprint_id))
-    create_deployment(inputs, blueprint_id, deployment_id)
+    create_deployment(inputs=inputs,
+                      blueprint_id=blueprint_id,
+                      deployment_id=deployment_id)
 
 
 @workflow
-def discover_and_deploy(node_id=None, ctx=None):
+def discover_and_deploy(blueprint_id,
+                        node_id=None,
+                        deployment_id=None,
+                        ctx=None):
+
     ctx = ctx or wtx
     discover_subclouds(node_id, ctx)
-    
+
+    if node_id:
+        controller_node = ctx.get_node(node_id)
+        controller_node_instances = controller_node.instances
+    else:
+        controller_node_instances = get_instances_of_nodes(
+            node_type=CONTROLLER_TYPE, deployment_id=ctx.deployment.id)
+
+    for controller_node_instance in controller_node_instances:
+        subcloud = controller_node_instance.runtime_properties.get(
+            'subcloud', {})
+        if subcloud:
+            deployment_id = deployment_id or controller_node_instance.id
+            controller_uuid = subcloud.get('controller_uuid')
+            controller_name = subcloud.get('controller_name')
+            inputs = {
+                'controller_uuid': controller_uuid,
+                'controller_name': controller_name
+            }
+            ctx.logger.info(
+                'Creating deployment {dep} with blueprint {blu} '
+                'with these inputs: {inp}'.format(
+                    dep=deployment_id, blu=blueprint_id, inp=inputs))
+            deploy_subcloud(
+                blueprint_id=blueprint_id,
+                deployment_id=deployment_id,
+                inputs=inputs,
+                ctx=ctx)

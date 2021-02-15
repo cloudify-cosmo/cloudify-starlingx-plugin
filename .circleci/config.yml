@@ -40,9 +40,8 @@ commands:
           name: Run Flake8
           command: /home/circleci/.local/bin/tox -e flake8
       - run:
-         name: Run nosetest
-         command: python -m pytest
-
+         name: Run pytest
+         command: /home/circleci/.local/bin/tox -e pytest
 
   generate_py36_wagon:
     steps:

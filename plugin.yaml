@@ -207,3 +207,19 @@ workflows:
         description: The name of the node template of the cloudify.nodes.starlingx.Controller node, whose subclouds you wish to discover.
         type: string
         default: ''
+
+  discover_and_deploy:
+    mapping: starlingx.cloudify_starlingx.workflows.discover.discover_and_deploy
+    parameters:
+      node_id:
+        description: The name of the node template of the cloudify.nodes.starlingx.Controller node, whose subclouds you wish to discover.
+        type: string
+        default: ''
+      blueprint_id:
+        description: The ID of the blueprint.
+        type: string
+        default: ''
+      deployment_id:
+        description: The ID of the deployment.
+        type: string
+        default: ''
