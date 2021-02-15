@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import unittest
-from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
+from cloudify.constants import NODE_INSTANCE
 
 
 class StarlingXTestBase(unittest.TestCase):
@@ -41,8 +41,10 @@ class StarlingXTestBase(unittest.TestCase):
         ctx.node = node
         instance = unittest.mock.MagicMock()
         instance.runtime_properties = {}
+        instance.node_id = node_name
         ctx.instance = instance
         ctx._context = {'node_id': node_name}
+        ctx.node.id = node_name
 
         source = unittest.mock.MagicMock()
         target = unittest.mock.MagicMock()
@@ -54,5 +56,8 @@ class StarlingXTestBase(unittest.TestCase):
         target.instance = instance
         ctx.source = source
         ctx.target = target
+        ctx.node.instances = [ctx.instance]
+        ctx.get_node = unittest.mock.MagicMock(return_value=ctx.node)
+        ctx.deployment.id = 'baz'
 
         return ctx

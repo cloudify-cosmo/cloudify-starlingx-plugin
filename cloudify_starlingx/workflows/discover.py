@@ -56,28 +56,29 @@ def discover_subclouds(node_id=None, ctx=None, **_):
 
     for controller_node_instance in controller_node_instances:
         # For each node perform discover subcloud process
-        subclouds = discover_subcloud(controller_node_instance)
+        subclouds = discover_subcloud(controller_node_instance, ctx)
         update_runtime_properties(
             instance=controller_node_instance,
             resources=subclouds,
             prop_name='subcloud')
 
 
-def discover_subcloud(controller_node):
+def discover_subcloud(controller_node, ctx=None):
     """ For a provided cloudify node object of controller type, we scan for
     related subclouds.
 
     :param controller_node: Cloudify node rest API object.
     :return list: subclouds
     """
-    node = wtx.get_node(node_id=controller_node.node_id)
+    ctx = ctx or wtx
+    node = ctx.get_node(node_id=controller_node.node_id)
     client_config = desecretize_client_config(
             node.properties.get('client_config', {}))
     try:
         return SystemResource(
             client_config=client_config,
             resource_config=node.properties.get('resource_config'),
-            logger=wtx.logger
+            logger=ctx.logger
         ).subcloud_resources
     except APIException as errors:
         _, _, tb = sys.exc_info()
@@ -91,7 +92,7 @@ def discover_subcloud(controller_node):
                 'Failure while trying to discover subclouds:'
                 ': {0}'.format(message))
         else:
-            wtx.logger.error('No subclouds identified.'.format(message))
+            ctx.logger.error('No subclouds identified.')
         return []
 
 
@@ -140,4 +141,5 @@ def discover_and_deploy(blueprint_id,
             deploy_subcloud(
                 blueprint_id=blueprint_id,
                 deployment_id=deployment_id,
-                inputs=inputs)
+                inputs=inputs,
+                ctx=ctx)
