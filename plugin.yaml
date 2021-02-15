@@ -165,38 +165,10 @@ node_types:
         poststart:
           implementation: starlingx.cloudify_starlingx.resources.controller.poststart
 
-  cloudify.nodes.starlingx.StandaloneSystem:
-    derived_from: cloudify.nodes.starlingx.System
-    properties:
-      <<: *external_resource
-      <<: *client_config
-      resource_config:
-        type: cloudify.types.starlingx.StandaloneSystem
-
-  cloudify.nodes.starlingx.SystemController:
-    derived_from: cloudify.nodes.starlingx.System
-    properties:
-      <<: *external_resource
-      <<: *client_config
-      resource_config:
-        type: cloudify.types.starlingx.SystemController
-
-  cloudify.nodes.starlingx.Subcloud:
-    derived_from: cloudify.nodes.starlingx.System
-    properties:
-      <<: *external_resource
-      <<: *client_config
-      resource_config:
-        type: cloudify.types.starlingx.Subcloud
-
 relationships:
 
   cloudify.relationships.starlingx.subcloud_connected_to_system_controller:
     derived_from: cloudify.relationships.connected_to
-    source_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        preconfigure:
-          implementation: starlingx.cloudify_starlingx.resources.subcloud.preconfigure
 
 workflows:
 

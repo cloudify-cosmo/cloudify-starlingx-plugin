@@ -132,7 +132,10 @@ def discover_and_deploy(blueprint_id,
             controller_name = subcloud.get('controller_name')
             inputs = {
                 'controller_uuid': controller_uuid,
-                'controller_name': controller_name
+                'controller_name': controller_name,
+                'distributed_cloud_role': 'Subcloud',
+                'system_type': 'null',
+                'system_mode': 'null'
             }
             ctx.logger.info(
                 'Creating deployment {dep} with blueprint {blu} '
