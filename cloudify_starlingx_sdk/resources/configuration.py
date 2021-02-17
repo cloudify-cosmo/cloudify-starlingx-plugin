@@ -20,6 +20,8 @@ from cgtsclient.client import get_client
 from ..common import StarlingXResource
 from .distributed_cloud import SubcloudResource
 
+NOT_STANDALONE = ['subcloud', 'systemcontroller', 'null', None]
+
 
 class ConfigurationResource(StarlingXResource):
     """Base class for objects that use the cgtsclient."""
@@ -62,6 +64,9 @@ class SystemResource(ConfigurationResource):
     def get(self):
         return self.connection.isystem.get(self.resource_id)
 
+    def get_from_name(self, name):
+        return self.connection.isystem.get(name)
+
     @property
     def hosts(self):
         host_list = []
@@ -97,15 +102,32 @@ class SystemResource(ConfigurationResource):
 
     @property
     def is_standalone_system(self):
-        return not self.distributed_cloud_role
+        if not self.distributed_cloud_role or self.config.get(
+                'distributed_cloud_role', 'null') in NOT_STANDALONE:
+            return True
+        return False
 
     @property
     def is_system_controller(self):
-        return self.distributed_cloud_role.lower() == 'systemcontroller'
+        return self.config.get(
+            'distributed_cloud_role', 'null').lower() == 'systemcontroller'
 
     @property
     def is_subcloud(self):
-        return self.distributed_cloud_role.lower() == 'subcloud'
+        return self.config.get(
+            'distributed_cloud_role', 'null').lower() == 'subcloud'
+
+    @property
+    def host_resources(self):
+        host_resources = []
+        if not self._host_resources:
+            for host in self.hosts:
+                host_resources.append(
+                    HostResource(client_config=self.client_config,
+                                 resource_config={'uuid': host.uuid},
+                                 logger=self.logger))
+            self._host_resources = host_resources
+        return self._host_resources
 
     @property
     def subcloud_resource(self):
@@ -119,18 +141,6 @@ class SystemResource(ConfigurationResource):
             )
         return self._subcloud_resource.get_subcloud_from_name(
             self.resource.name)
-
-    @property
-    def host_resources(self):
-        host_resources = []
-        if not self._host_resources:
-            for host in self.hosts:
-                host_resources.append(
-                    HostResource(client_config=self.client_config,
-                                 resource_config={'uuid': host.uuid},
-                                 logger=self.logger))
-            self._host_resources = host_resources
-        return self._host_resources
 
     @property
     def subcloud_resources(self):
@@ -151,6 +161,7 @@ class SystemResource(ConfigurationResource):
 
     def to_dict(self):
         return {
+            'external_id': self.resource_id,
             'name': self.resource.name,
             'description': self.resource.description,
             'location': self.resource.location,

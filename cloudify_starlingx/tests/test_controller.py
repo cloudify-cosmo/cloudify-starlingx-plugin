@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cloudify.constants import NODE_INSTANCE
-
 from unittest.mock import patch
+
+from cloudify.constants import NODE_INSTANCE
+from cloudify.exceptions import NonRecoverableError
+
 from . import StarlingXTestBase
 from ..resources.controller import poststart
 
@@ -23,8 +25,26 @@ from ..resources.controller import poststart
 class StarlingXControllerTest(StarlingXTestBase):
 
     @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
-    def test_poststart(self, _):
+    @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
+    def test_poststart(self, _, __):
         ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
+        ctx.node.properties['resource_config'] = {
+            'uuid': 'foo',
+            'name': 'bar',
+            'distributed_cloud_role': 'foo',
+            'system_type': 'All-in-one',
+            'system_mode': 'duplex'
+        }
+        # Test that an invalid configuration raises an error.
+        self.assertRaises(NonRecoverableError, poststart, ctx=ctx)
+        ctx.node.properties['resource_config'] = {
+            'uuid': 'foo',
+            'name': 'bar',
+            'distributed_cloud_role': 'Subcloud',
+            'system_type': 'Standard',
+            'system_mode': 'simplex'
+        }
+        # Test that everything goes smoothly with a valid configuration.
         poststart(ctx=ctx)
         expected = {
             'name',

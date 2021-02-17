@@ -18,19 +18,35 @@ from cloudify.constants import NODE_INSTANCE
 from unittest.mock import patch, MagicMock
 
 from ..workflows import discover
+from ..workflows.utils import CONTROLLER_TYPE
 from . import StarlingXTestBase
 
 
 class StarlingXWorkflowTest(StarlingXTestBase):
 
     def get_mock_rest_client(self):
-        node = MagicMock(node_id='foo',
-                         type_hierarchy=discover.CONTROLLER_TYPE)
-        nodes_list = [node]
+        mock_node = MagicMock(node_id='foo',
+                              type_hierarchy=CONTROLLER_TYPE)
+        mock_node.id = mock_node.node_id
+        mock_node.properties = {
+            'client_config': {
+                'api_key': 'foo',
+            },
+            'resource_config': {
+                'uuid': 'foo',
+                'name': 'foo'
+            }
+        }
+        nodes_list = [mock_node]
         mock_nodes_client = MagicMock()
         mock_nodes_client.list = MagicMock(return_value=nodes_list)
         mock_instance = MagicMock()
-        mock_instance.node = node
+        mock_instance.node = mock_node
+        mock_instance.node_id = mock_node.node_id
+        mock_instance.runtime_properties = {
+            'external_id': 'foo',
+            'name': 'foo',
+        }
         instances_list = [mock_instance]
         mock_instances_client = MagicMock()
         mock_instances_client.list = MagicMock(return_value=instances_list)
@@ -65,8 +81,11 @@ class StarlingXWorkflowTest(StarlingXTestBase):
         get_rest_client.return_value = mock_rest_client
         ctx = self.get_mock_ctx('foo', reltype=NODE_INSTANCE)
         ctx.instance.runtime_properties['subclouds'] = {
-            'controller_uuid': 'taco',
-            'controller_name': 'bell'
+            'subcloud1': {
+                'external_id': 'taco',
+                'name': 'bell',
+                'oam_floating_ip': 'baz'
+            }
         }
-        discover.discover_and_deploy('bar', ctx=ctx)
+        discover.discover_and_deploy('bar', node_id='foo', ctx=ctx)
         assert mock_rest_client.deployments.create.called

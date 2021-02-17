@@ -13,11 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import sys
 from copy import deepcopy
 
 from cloudify.workflows import ctx as wtx
 from cloudify.manager import get_rest_client
 from cloudify.exceptions import NonRecoverableError
+from cloudify.utils import exception_to_error_cause
+from dcmanagerclient.exceptions import APIException
+
+from cloudify_starlingx_sdk.resources.configuration import SystemResource
+
+CONTROLLER_TYPE = 'cloudify.nodes.starlingx.System'
 
 
 def with_rest_client(func):
@@ -120,3 +128,72 @@ def get_secret(rest_client, secret_name):
 def create_deployment(rest_client, inputs, blueprint_id, deployment_id=None):
     rest_client.deployments.create(
         blueprint_id, deployment_id or blueprint_id, inputs)
+
+
+@with_rest_client
+def get_node_instance(rest_client, node_instance_id):
+    return rest_client.node_instance.get(node_instance_id=node_instance_id)
+
+
+def get_controller_node_instance(node_instance_id=None,
+                                 node_id=None,
+                                 ctx=None):
+
+    """Get a node instance of a System Controller.
+
+    :param node_instance_id:
+    :param node_id:
+    :param ctx:
+    :return:
+    """
+
+    ctx = ctx or wtx
+    if node_instance_id:
+        controller_node_instances = [get_node_instance(
+            node_instance_id=node_instance_id)]
+    elif node_id:
+        controller_node = ctx.get_node(node_id)
+        controller_node_instances = controller_node.instances
+    else:
+        controller_node_instances = get_instances_of_nodes(
+            node_type=CONTROLLER_TYPE, deployment_id=ctx.deployment.id)
+
+    if len(controller_node_instances) != 1:
+        raise NonRecoverableError(
+            'Expected only one node SystemController node instance. '
+            'Exactly {ll} were found: [{nn}]. '
+            'Provide the ID of a specific SystemController node instance '
+            'using the node_instance_id parameter.'.format(
+                ll=len(controller_node_instances),
+                nn=controller_node_instances))
+
+    return controller_node_instances[0]
+
+
+def get_system(controller_node):
+    """ For a provided cloudify node object of controller type, we scan for
+    related subclouds.
+
+    :param controller_node: Cloudify node rest API object.
+    :return list: subclouds
+    """
+    client_config = desecretize_client_config(
+        controller_node.properties.get('client_config', {}))
+    try:
+        return SystemResource(
+            client_config=client_config,
+            resource_config=controller_node.properties.get('resource_config'),
+            logger=controller_node.logger
+        )
+    except APIException as errors:
+        _, _, tb = sys.exc_info()
+        if hasattr(errors, 'message'):
+            message = errors.message
+        else:
+            message = ''
+        message += str([exception_to_error_cause(errors, tb)])
+        if 'Subcloud not found' not in message:
+            raise NonRecoverableError(
+                'Failure while trying to discover subclouds:'
+                ': {0}'.format(message))
+        return []

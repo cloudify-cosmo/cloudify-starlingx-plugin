@@ -1,16 +1,16 @@
 tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
-  - http://cloudify.co/spec/cloudify/5.2/types.yaml
+  - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
 
 inputs:
 
   # System Information
-  uuid:
+  system_uuid:
     type: string
 
-  name:
+  system_name:
     type: string
 
   description:
@@ -76,17 +76,48 @@ dsl_definitions:
 
 node_templates:
 
-  wcrs:
-    type: cloudify.nodes.starlingx.SystemController # This needs to be a single type.
+  wcrp:
+    type: cloudify.nodes.starlingx.System
     properties:
       client_config: *client_config
       resource_config:
-        uuid: { get_input: uuid }
-        name: { get_input: name }
+        uuid: { get_input: system_uuid }
+        name: { get_input: system_name }
         description: { get_input: description }
         distributed_cloud_role: { get_input: distributed_cloud_role }
         system_type: { get_input: system_type }
         system_mode: { get_input: system_mode }
 
-capabilities: {}
-outputs: {}
+capabilities:
+
+  wrcs-ip:
+    description: The external endpoint of the application.
+    value: { get_attribute: [ wcrp, public_ip ] }
+
+  wrcs-user-secret:
+    description: the secret representing the wrcs access username
+    value: { get_attribute: [ wcrp, user_secret ] }
+
+  wrcs-pass-secret:
+    description: The secret representing the wrcs access password.
+    value: { get_attribute: [ wcrp, pass_secret ] }
+
+  K8s-IP:
+    description: The IP required to access its Kubernetes cluster.
+    value: { get_attribute: [ wcrp, k8s_ip ] }
+
+  K8s-service-account-token:
+    description: The token required to access that k8s cluster.
+    value: { get_attribute: [ wcrp, k8s_service_account_token ] }
+
+  k8s-cert:
+    description: The certificate required to access that k8s cluster.
+    value: { get_attribute: [ wcrp, k8s_cert ] }
+
+  Openstack-ip:
+    description: Optional, if open stack is supported – The IP for the Openstack management.
+    value: { get_attribute: [ wcrp, openstack_ip ] }
+
+  Openstack-key:
+    description: Optional, if open stack is supported – The access key for Openstack management
+    value: { get_attribute: [ wcrp, openstack_key ] }
