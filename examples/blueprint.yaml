@@ -4,6 +4,13 @@ imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
 
+blueprint-labels:
+  csys-obj-type: environment
+  csys-env-type: wrcp
+
+labels:
+  csys-obj-type: environment
+
 inputs:
 
   # System Information
@@ -15,7 +22,7 @@ inputs:
 
   description:
     type: string
-    default: 'WRCS'
+    default: 'WRCP'
 
   distributed_cloud_role:
     type: string
@@ -90,23 +97,23 @@ node_templates:
 
 capabilities:
 
-  wrcs-ip:
+  wrcp-ip:
     description: The external endpoint of the application.
     value: { get_attribute: [ wcrp, public_ip ] }
 
-  wrcs-user-secret:
-    description: the secret representing the wrcs access username
+  wrcp-user-secret:
+    description: the secret representing the wrcp access username
     value: { get_attribute: [ wcrp, user_secret ] }
 
-  wrcs-pass-secret:
-    description: The secret representing the wrcs access password.
+  wrcp-pass-secret:
+    description: The secret representing the wrcp access password.
     value: { get_attribute: [ wcrp, pass_secret ] }
 
-  K8s-IP:
+  k8s-IP:
     description: The IP required to access its Kubernetes cluster.
     value: { get_attribute: [ wcrp, k8s_ip ] }
 
-  K8s-service-account-token:
+  k8s-service-account-token:
     description: The token required to access that k8s cluster.
     value: { get_attribute: [ wcrp, k8s_service_account_token ] }
 
@@ -114,10 +121,10 @@ capabilities:
     description: The certificate required to access that k8s cluster.
     value: { get_attribute: [ wcrp, k8s_cert ] }
 
-  Openstack-ip:
+  openstack-ip:
     description: Optional, if open stack is supported – The IP for the Openstack management.
     value: { get_attribute: [ wcrp, openstack_ip ] }
 
-  Openstack-key:
+  openstack-key:
     description: Optional, if open stack is supported – The access key for Openstack management
     value: { get_attribute: [ wcrp, openstack_key ] }
