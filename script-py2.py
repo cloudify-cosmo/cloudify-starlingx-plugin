@@ -1,7 +1,6 @@
 
 import os
 import sys
-import json
 import logging
 
 from dcmanagerclient.api import client
@@ -9,25 +8,26 @@ from cgtsclient.client import get_client
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-client_args = dict(
-    auth_url=os.environ['OS_AUTH_URL'],
-    username=os.environ['OS_USERNAME'],
-    api_key=os.environ['OS_PASSWORD'],
-    project_name=os.environ['OS_PROJECT_NAME'],
-    # user_domain_name=os.environ['OS_USER_DOMAIN_NAME'],
-    # project_domain_name=os.environ['OS_PROJECT_NAME'],
-    # project_domain_id=os.environ['OS_PROJECT_DOMAIN_ID']
-)
-
-dc_client_args = dict(
-    auth_url=os.environ['OS_AUTH_URL'],
-    username=os.environ['OS_USERNAME'],
-    api_key=os.environ['OS_PASSWORD'],
-    project_name=os.environ['OS_PROJECT_NAME'],
-    user_domain_name=os.environ['OS_USER_DOMAIN_NAME'],
-    project_domain_name=os.environ['OS_PROJECT_NAME'],
-    project_domain_id=os.environ['OS_PROJECT_DOMAIN_ID']
-)
+try:
+    client_args = dict(
+        auth_url=os.environ['OS_AUTH_URL'],
+        username=os.environ['OS_USERNAME'],
+        api_key=os.environ['OS_PASSWORD'],
+        project_name=os.environ['OS_PROJECT_NAME'],
+    )
+    dc_client_args = dict(
+        auth_url=os.environ['OS_AUTH_URL'],
+        username=os.environ['OS_USERNAME'],
+        api_key=os.environ['OS_PASSWORD'],
+        project_name=os.environ['OS_PROJECT_NAME'],
+        user_domain_name=os.environ['OS_USER_DOMAIN_NAME'],
+        project_domain_name=os.environ['OS_PROJECT_NAME'],
+        project_domain_id=os.environ['OS_PROJECT_DOMAIN_ID']
+    )
+except KeyError:
+    logging.error('Please source your RC file before execution, '
+                  'e.g.: `source ~/downloads/admin-rc.sh`')
+    sys.exit(1)
 
 os_client_args = {}
 for key, val in client_args.items():
@@ -220,5 +220,12 @@ def show_diagnostics():
 
 
 if __name__ == '__main__':
-    show_system_info()
-    show_diagnostics()
+
+    if 'help' in sys.argv:
+        logging.info('Usage: python ./script-py2.py.')
+        logging.info('Please source your RC file before execution, '
+                     'e.g.: `source ~/downloads/admin-rc.sh`')
+        sys.exit(0)
+    else:
+        show_system_info()
+        show_diagnostics()
