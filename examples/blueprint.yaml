@@ -4,12 +4,18 @@ imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
 
-blueprint-labels:
-  csys-obj-type: environment
-  csys-env-type: wrcp
+blueprint_labels:
+  csys-obj-type:
+    values:
+    - environment
+  csys-env-type:
+    values:
+    - wrcp
 
 labels:
-  csys-obj-type: environment
+  csys-obj-type:
+    values:
+    - environment
 
 inputs:
 
