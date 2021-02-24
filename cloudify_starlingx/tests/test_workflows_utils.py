@@ -67,12 +67,12 @@ class StarlingXWorkflowUtilsTest(StarlingXTestBase):
         assert expected == result
 
     @patch('cloudify_starlingx.workflows.utils.get_rest_client')
-    def test_check_for_secret_value(self, mock_client):
+    def test_resolve_intrinsic_functions(self, mock_client):
         expected = 'foo'
-        result = utils.check_for_secret_value(expected)
+        result = utils.resolve_intrinsic_functions(expected)
         assert expected == result
         prop = {'get_secret': 'bar'}
-        utils.check_for_secret_value(prop)
+        utils.resolve_intrinsic_functions(prop)
         assert call().secrets.get('bar') in mock_client.mock_calls
 
     @patch('cloudify_starlingx.workflows.utils.get_rest_client')

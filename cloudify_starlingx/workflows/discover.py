@@ -41,25 +41,27 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
     ctx = ctx or wtx
     controller_node_instance = get_controller_node_instance(
         node_instance_id, node_id, ctx=ctx)
-
-    # For each node perform discover subcloud process
     system = get_system(
         ctx.get_node(controller_node_instance.node_id))
     if not system.subcloud_resources:
-        ctx.logger.error('No subclouds identified.')
+        ctx.logger.error(
+            'System {s} has no subclouds.'.format(s=system.resource_id))
     else:
+        ctx.logger.info(
+            'System {s} has subclouds. Storing...'.format(
+                s=system.resource_id))
         update_runtime_properties(
             instance=controller_node_instance,
-            resources=system.subcloud_resources,
-            prop_name='subclouds')
+            resources=system.subcloud_resources)
 
 
 @workflow
 def deploy_subcloud(inputs, blueprint_id, deployment_id=None, ctx=None):
     ctx = ctx or wtx
     ctx.logger.info(
-        'Creating Deployment {_did} from blueprint {_bid}.'.format(
-            _bid=blueprint_id, _did=deployment_id or blueprint_id))
+        'Creating deployment {dep} with blueprint {blu} '
+        'with these inputs: {inp}'.format(
+            dep=deployment_id, blu=blueprint_id, inp=inputs))
     create_deployment(inputs=inputs,
                       blueprint_id=blueprint_id,
                       deployment_id=deployment_id)
@@ -82,21 +84,18 @@ def discover_and_deploy(blueprint_id,
     subclouds = controller_node_instance.runtime_properties.get(
         'subclouds', {})
 
-    for _, subcloud in subclouds.items():
-        deployment_id = deployment_id or controller_node_instance.node_id
+    for subcloud in subclouds.values():
         subcloud_name = subcloud.get('name')
-        system = get_system(ctx.get_node(subcloud_name))
+        deployment_id = deployment_id or subcloud_name
+        # How do we get the system object for the subcloud?
+        # system = get_system(ctx.get_node(subcloud_name))
         inputs = {
-            'system_uuid': system.get_from_name(subcloud_name),
+            'system_uuid': 'null',
             'system_name': subcloud_name,
-            'distributed_cloud_role': 'Subcloud',
+            'distributed_cloud_role': 'subcloud',
             'system_type': 'null',
             'system_mode': 'null'
         }
-        ctx.logger.info(
-            'Creating deployment {dep} with blueprint {blu} '
-            'with these inputs: {inp}'.format(
-                dep=deployment_id, blu=blueprint_id, inp=inputs))
         deploy_subcloud(
             blueprint_id=blueprint_id,
             deployment_id=deployment_id,

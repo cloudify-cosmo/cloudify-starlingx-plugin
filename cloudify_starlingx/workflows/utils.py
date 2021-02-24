@@ -30,7 +30,7 @@ CONTROLLER_TYPE = 'cloudify.nodes.starlingx.System'
 
 def with_rest_client(func):
     """
-    :param class_decl: This is a class for the starlingx resource need to be
+    :param func: This is a class for the starlingx resource need to be
     invoked
     :return: a wrapper object encapsulating the invoked function
     """
@@ -78,20 +78,20 @@ def get_node_instances_by_type(node_type, deployment_id, rest_client):
 
 
 @with_rest_client
-def update_runtime_properties(rest_client,
-                              instance,
+def update_runtime_properties(instance,
                               resources,
-                              prop_name):
+                              prop_name,
+                              rest_client):
     """
 
-    :param rest_client: The rest client.
     :param instance: The node instance to update.
     :param resources: A list of resources to pull.
     :param prop_name: The property on the instance to update.
+    :param rest_client: The rest client.
     :return:
     """
 
-    prop_name = prop_name or 'subcloud'
+    prop_name = prop_name or 'subclouds'
 
     for resource in resources:
         props = deepcopy(instance.runtime_properties)
@@ -107,32 +107,46 @@ def update_runtime_properties(rest_client,
 
 def desecretize_client_config(config):
     for key, value in config.items():
-        config[key] = check_for_secret_value(value)
+        config[key] = resolve_intrinsic_functions(value)
     return config
 
 
-def check_for_secret_value(prop):
+def resolve_intrinsic_functions(prop):
     if isinstance(prop, dict):
         if 'get_secret' in prop:
-            return get_secret(secret_name=prop.get('get_secret'))
+            prop = prop.get('get_secret')
+            if isinstance(prop, dict):
+                prop = resolve_intrinsic_functions(prop)
+            return get_secret(prop)
+        if 'get_input' in prop:
+            prop = prop.get('get_input')
+            if isinstance(prop, dict):
+                prop = resolve_intrinsic_functions(prop)
+            return get_input(prop)
     return prop
 
 
 @with_rest_client
-def get_secret(rest_client, secret_name):
+def get_secret(secret_name, rest_client):
     secret = rest_client.secrets.get(secret_name)
     return secret.value
 
 
 @with_rest_client
-def create_deployment(rest_client, inputs, blueprint_id, deployment_id=None):
+def create_deployment(inputs, blueprint_id, deployment_id, rest_client):
     rest_client.deployments.create(
         blueprint_id, deployment_id or blueprint_id, inputs)
 
 
 @with_rest_client
-def get_node_instance(rest_client, node_instance_id):
+def get_node_instance(node_instance_id, rest_client):
     return rest_client.node_instance.get(node_instance_id=node_instance_id)
+
+
+@with_rest_client
+def get_input(input_name, rest_client):
+    deployment = rest_client.deployments.get(wtx.deployment.id)
+    return deployment.inputs.get(input_name)
 
 
 def get_controller_node_instance(node_instance_id=None,
@@ -171,8 +185,7 @@ def get_controller_node_instance(node_instance_id=None,
 
 
 def get_system(controller_node):
-    """ For a provided cloudify node object of controller type, we scan for
-    related subclouds.
+    """ Get a system object by cloudify node.
 
     :param controller_node: Cloudify node rest API object.
     :return list: subclouds
@@ -195,5 +208,5 @@ def get_system(controller_node):
         if 'Subcloud not found' not in message:
             raise NonRecoverableError(
                 'Failure while trying to discover subclouds:'
-                ': {0}'.format(message))
-        return []
+                ' {0}'.format(message))
+        return

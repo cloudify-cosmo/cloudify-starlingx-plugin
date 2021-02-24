@@ -67,20 +67,19 @@ class SystemResource(ConfigurationResource):
     def get_from_name(self, name):
         return self.connection.isystem.get(name)
 
-    @property
-    def hosts(self):
-        host_list = []
-        for host in self.connection.ihost.list():
-            if host.isystem_uuid == self.resource_id:
-                host_list.append(host)
-        return host_list
-
-    @property
-    def subclouds(self):
-        subclouds = []
-        for subcloud in self.subcloud_resource.list():
-            subclouds.append(subcloud)
-        return subclouds
+    def to_dict(self):
+        return {
+            'external_id': self.resource_id,
+            'name': self.resource.name,
+            'description': self.resource.description,
+            'location': self.resource.location,
+            'system_type': self.resource.system_type,
+            'system_mode': self.resource.system_mode,
+            'region_name': self.region_name,
+            'latitude': getattr(self.resource, 'latitude', None),
+            'longitude': getattr(self.resource, 'latitude', None),
+            'distributed_cloud_role': self.resource.distributed_cloud_role
+        }
 
     @property
     def region_name(self):
@@ -100,39 +99,33 @@ class SystemResource(ConfigurationResource):
     def system_mode(self):
         return self.resource.system_mode
 
+    def value_from_config(self, name):
+        return self.config.get(name, 'null').lower()
+
     @property
     def is_standalone_system(self):
-        if not self.distributed_cloud_role or self.config.get(
-                'distributed_cloud_role', 'null') in NOT_STANDALONE:
+        if not self.distributed_cloud_role or \
+                self.value_from_config(
+                    'distributed_cloud_role') in NOT_STANDALONE:
             return True
         return False
 
     @property
     def is_system_controller(self):
-        return self.config.get(
-            'distributed_cloud_role', 'null').lower() == 'systemcontroller'
+        return self.value_from_config('distributed_cloud_role') == \
+               'systemcontroller'
 
     @property
     def is_subcloud(self):
-        return self.config.get(
-            'distributed_cloud_role', 'null').lower() == 'subcloud'
-
-    @property
-    def host_resources(self):
-        host_resources = []
-        if not self._host_resources:
-            for host in self.hosts:
-                host_resources.append(
-                    HostResource(client_config=self.client_config,
-                                 resource_config={'uuid': host.uuid},
-                                 logger=self.logger))
-            self._host_resources = host_resources
-        return self._host_resources
+        return self.value_from_config('distributed_cloud_role') == \
+               'subcloud'
 
     @property
     def subcloud_resource(self):
         # If self.is_subcloud() is True, then we will need this
         # in order to populate runtime properties.
+        if not self.is_subcloud:
+            return
         if not self._subcloud_resource:
             self._subcloud_resource = SubcloudResource(
                 client_config=self.client_config,
@@ -143,34 +136,87 @@ class SystemResource(ConfigurationResource):
             self.resource.name)
 
     @property
+    def subclouds(self):
+        """ This is a list of raw subclouds.
+        """
+        subclouds = []
+        if self.is_subcloud:
+            for subcloud in self.subcloud_resource.list():
+                subclouds.append(subcloud)
+        return subclouds
+
+    @property
     def subcloud_resources(self):
+        """ This is a list of the subcloud resource objects.
+        I.e. interfaces for storing properties in runtime, etc.
+        """
         subcloud_resources = []
         if not self._subcloud_resources:
             for subcloud in self.subclouds:
-                subcloud_resources.append(
+                resource = \
                     SubcloudResource(
                         client_config=self.client_config,
                         resource_config={'subcloud_id': subcloud.subcloud_id},
-                        logger=self.logger))
+                        logger=self.logger)
+                if not resource.resource.availability_status == 'online':
+                    # We only need to include online resources in the list.
+                    continue
+                subcloud_resources.append(resource)
             self._subcloud_resources = subcloud_resources
         return self._subcloud_resources
 
     @property
     def oam_floating_ip(self):
-        return self.subcloud_resource.oam_floating_ip
+        """ If the system is a subcloud,
+        this value will expose the oam floating IP.
+        """
+        if self.is_subcloud:
+            return self.subcloud_resource.oam_floating_ip
+        else:
+            return
+
+    @property
+    def hosts(self):
+        """ This is a list of raw hosts.
+        """
+        host_list = []
+        for host in self.connection.ihost.list():
+            if host.isystem_uuid == self.resource_id:
+                host_list.append(host)
+        return host_list
+
+    @property
+    def host_resources(self):
+        """ This is a list of the host resource objects.
+        I.e. interfaces for storing properties in runtime, etc.
+        """
+        host_resources = []
+        if not self._host_resources:
+            for host in self.hosts:
+                host_resources.append(
+                    HostResource(client_config=self.client_config,
+                                 resource_config={'uuid': host.uuid},
+                                 logger=self.logger))
+            self._host_resources = host_resources
+        return self._host_resources
+
+
+class HostResource(ConfigurationResource):
+
+    def list(self):
+        return self.connection.ihost.list()
+
+    def get(self):
+        return self.connection.ihost.get(self.resource_id)
 
     def to_dict(self):
         return {
-            'external_id': self.resource_id,
-            'name': self.resource.name,
-            'description': self.resource.description,
-            'location': self.resource.location,
-            'system_type': self.resource.system_type,
-            'system_mode': self.resource.system_mode,
-            'region_name': self.region_name,
-            'latitude': getattr(self.resource, 'latitude', None),
-            'longitude': getattr(self.resource, 'latitude', None),
-            'distributed_cloud_role': self.resource.distributed_cloud_role
+            self.resource.uuid: {
+                'hostname': self.resource.hostname,
+                'personality': self.resource.personality,
+                'capabilities': self.resource.capabilities,
+                'subfunctions': self.resource.subfunctions
+            }
         }
 
 
@@ -190,23 +236,4 @@ class ApplicationResource(ConfigurationResource):
             'app_version': self.resource.app_version,
             'manifest_name': self.resource.manifest_name,
             'manifest_file': self.resource.manifest_file,
-        }
-
-
-class HostResource(ConfigurationResource):
-
-    def list(self):
-        return self.connection.ihost.list()
-
-    def get(self):
-        return self.connection.ihost.get(self.resource_id)
-
-    def to_dict(self):
-        return {
-            self.resource.uuid: {
-                'hostname': self.resource.hostname,
-                'personality': self.resource.personality,
-                'capabilities': self.resource.capabilities,
-                'subfunctions': self.resource.subfunctions
-            }
         }

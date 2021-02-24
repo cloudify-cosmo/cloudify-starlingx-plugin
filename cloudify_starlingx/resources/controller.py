@@ -37,6 +37,8 @@ def poststart(resource, ctx):
     if resource.is_subcloud:
         update_prop_resource(
             ctx.instance, resource.subcloud_resource, 'subcloud')
+        ctx.instance.runtime_properties['oam_floating_ip'] = \
+            resource.oam_floating_ip
     # If controller, gather subclouds info.
     elif resource.is_system_controller:
         update_prop_resources(
