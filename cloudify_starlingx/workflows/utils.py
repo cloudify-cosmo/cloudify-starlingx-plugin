@@ -91,18 +91,16 @@ def update_runtime_properties(instance,
     :return:
     """
 
-    prop_name = prop_name or 'subclouds'
-
     for resource in resources:
         props = deepcopy(instance.runtime_properties)
         prop = props.get(prop_name, {})
         if resource.resource_id not in prop:
             prop.update({resource.resource_id: resource.to_dict()})
         props[prop_name] = prop
-        rest_client.nodeinstances.update(instance.id,
-                                         instance.state,
-                                         props,
-                                         instance.state + 1)
+        rest_client.node_instances.update(instance.id,
+                                          instance.state,
+                                          props,
+                                          int(instance.version) + 1)
 
 
 def desecretize_client_config(config):
@@ -196,7 +194,7 @@ def get_system(controller_node):
         return SystemResource(
             client_config=client_config,
             resource_config=controller_node.properties.get('resource_config'),
-            logger=controller_node.logger
+            logger=wtx.logger
         )
     except APIException as errors:
         _, _, tb = sys.exc_info()

@@ -4,18 +4,18 @@ imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
 
-blueprint_labels:
-  csys-obj-type:
-    values:
-    - environment
-  csys-env-type:
-    values:
-    - wrcp
-
-labels:
-  csys-obj-type:
-    values:
-    - environment
+#blueprint_labels:
+#  csys-obj-type:
+#    values:
+#    - environment
+#  csys-env-type:
+#    values:
+#    - wrcp
+#
+#labels:
+#  csys-obj-type:
+#    values:
+#    - environment
 
 inputs:
 
@@ -128,9 +128,9 @@ capabilities:
     value: { get_attribute: [ wcrp, k8s_cert ] }
 
   openstack-ip:
-    description: Optional, if open stack is supported – The IP for the Openstack management.
+    description: Optional, if open stack is supported. The IP for the Openstack management.
     value: { get_attribute: [ wcrp, openstack_ip ] }
 
   openstack-key:
-    description: Optional, if open stack is supported – The access key for Openstack management
+    description: Optional, if open stack is supported. The access key for Openstack management
     value: { get_attribute: [ wcrp, openstack_key ] }

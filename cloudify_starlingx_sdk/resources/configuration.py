@@ -16,6 +16,9 @@
 from copy import deepcopy
 
 from cgtsclient.client import get_client
+# This will be necessary if we find that resources are being called.
+# from dcmanagerclient.openstack.common.apiclient.exceptions import \
+#     EndpointNotFound
 
 from ..common import StarlingXResource
 from .distributed_cloud import SubcloudResource
@@ -122,27 +125,21 @@ class SystemResource(ConfigurationResource):
 
     @property
     def subcloud_resource(self):
-        # If self.is_subcloud() is True, then we will need this
-        # in order to populate runtime properties.
-        if not self.is_subcloud:
-            return
         if not self._subcloud_resource:
             self._subcloud_resource = SubcloudResource(
                 client_config=self.client_config,
                 resource_config=self.config,
                 logger=self.logger
             )
-        return self._subcloud_resource.get_subcloud_from_name(
-            self.resource.name)
+        return self._subcloud_resource
 
     @property
     def subclouds(self):
         """ This is a list of raw subclouds.
         """
         subclouds = []
-        if self.is_subcloud:
-            for subcloud in self.subcloud_resource.list():
-                subclouds.append(subcloud)
+        for subcloud in self.subcloud_resource.list():
+            subclouds.append(subcloud)
         return subclouds
 
     @property
@@ -158,10 +155,9 @@ class SystemResource(ConfigurationResource):
                         client_config=self.client_config,
                         resource_config={'subcloud_id': subcloud.subcloud_id},
                         logger=self.logger)
-                if not resource.resource.availability_status == 'online':
+                if resource.resource.availability_status.lower() == 'online':
                     # We only need to include online resources in the list.
-                    continue
-                subcloud_resources.append(resource)
+                    subcloud_resources.append(resource)
             self._subcloud_resources = subcloud_resources
         return self._subcloud_resources
 

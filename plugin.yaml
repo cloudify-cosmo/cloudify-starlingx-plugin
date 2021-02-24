@@ -11,7 +11,7 @@ dsl_definitions:
   client_config: &client_config
     client_config:
       type: cloudify.types.starlingx.ClientConfig
-      description: Your OpenStack client configuration.
+      description: Your StarlingX client configuration.
       required: false
 
   # Every resource uses this property unless noted.
@@ -24,32 +24,31 @@ dsl_definitions:
 data_types:
 
   cloudify.types.starlingx.ClientConfig:
-    # See: https://docs.openstack.org/python-openstackclient/pike/cli/man/openstack.html.
     properties:
       auth_url:
         type: string
-        description: Your OpenStack Client Authorization URL.
+        description: Your StarlingX Client Authorization URL.
         required: false
       username:
         type: string
-        description: Your OpenStack username.
+        description: Your StarlingX username.
         required: false
       api_key:
         type: string
-        description: Your OpenStack api_key.
+        description: Your StarlingX api_key.
         required: false
       project_name:
         type: string
-        description: The name of your OpenStack project.
+        description: The name of your StarlingX project.
         required: false
       tenant_name:
         type: string
-        description: The name of your OpenStack tenant.
+        description: The name of your StarlingX tenant.
         required: false
       region_name:
         type: string
         description: The region where you want this particular resource to be created.
-        required: false
+        default: RegionOne
       user_domain_id:
         type: string
         description: The user domain id
@@ -72,7 +71,7 @@ data_types:
         required: false
         default: false
       cacert:
-        description: Path to CA certificate to validate OpenStack's endpoint with.
+        description: Path to CA certificate to validate StarlingX's endpoint with.
         type: string
         required: false
       kwargs:
