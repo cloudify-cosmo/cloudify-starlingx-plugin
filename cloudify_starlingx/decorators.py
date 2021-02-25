@@ -22,6 +22,7 @@ from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 
 from .utils import resolve_ctx
+from cloudify_starlingx_sdk.constants import FATAL
 
 
 def with_starlingx_resource(class_decl):
@@ -57,5 +58,7 @@ def with_starlingx_resource(class_decl):
                     'Failure while trying to run operation:'
                     '{0}: {1}'.format(ctx.operation.name, message),
                     causes=[exception_to_error_cause(errors, tb)])
+            except FATAL as e:
+                raise NonRecoverableError('Fatal error: {e}'.format(e=str(e)))
         return wrapper_inner
     return wrapper_outer

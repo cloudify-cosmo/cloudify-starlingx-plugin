@@ -22,9 +22,11 @@ inputs:
   # System Information
   system_uuid:
     type: string
+    default: ''
 
   system_name:
     type: string
+    default: ''
 
   description:
     type: string
@@ -32,15 +34,15 @@ inputs:
 
   distributed_cloud_role:
     type: string
-    default: SystemController
+    default: ''
 
   system_type:
     type: string
-    default: Standard
+    default: ''
 
   system_mode:
     type: string
-    default: duplex
+    default: ''
 
   # Authentication Secret Keys
   auth_url_key:

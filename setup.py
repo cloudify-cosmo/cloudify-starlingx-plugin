@@ -46,5 +46,6 @@ setup(
         'cgtsclient',
         'httplib2',
         'cloudify-common',
+        'babel', # Required by distributedcloud-client
     ]
 )

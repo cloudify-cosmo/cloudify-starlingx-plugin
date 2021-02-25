@@ -1,2 +1,3 @@
 -e git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client
 -e git+https://github.com/cloudify-cosmo/starlingx.config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
+babel

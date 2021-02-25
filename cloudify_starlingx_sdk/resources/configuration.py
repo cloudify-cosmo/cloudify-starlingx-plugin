@@ -16,14 +16,13 @@
 from copy import deepcopy
 
 from cgtsclient.client import get_client
-# This will be necessary if we find that resources are being called.
-# from dcmanagerclient.openstack.common.apiclient.exceptions import \
-#     EndpointNotFound
+from cgtsclient.exc import HTTPNotFound
 
 from ..common import StarlingXResource
 from .distributed_cloud import SubcloudResource
 
-NOT_STANDALONE = ['subcloud', 'systemcontroller', 'null', None]
+NOT_STANDALONE = ['subcloud', 'systemcontroller']
+STANDALONE = ['null', None]
 
 
 class ConfigurationResource(StarlingXResource):
@@ -65,24 +64,40 @@ class SystemResource(ConfigurationResource):
         return self.connection.isystem.list()
 
     def get(self):
+        if not self.resource_id:
+            systems = self.list()
+            if len(systems) == 1:
+                return systems[0]
+            raise Exception('No system uuid was provided and '
+                            'more than one system exists in the account.')
         return self.connection.isystem.get(self.resource_id)
 
     def get_from_name(self, name):
         return self.connection.isystem.get(name)
 
     def to_dict(self):
+        self.logger.info(self.resource.__dict__)
         return {
             'external_id': self.resource_id,
             'name': self.resource.name,
             'description': self.resource.description,
             'location': self.resource.location,
-            'system_type': self.resource.system_type,
-            'system_mode': self.resource.system_mode,
+            'system_type': self.system_type,
+            'system_mode': self.system_mode,
             'region_name': self.region_name,
             'latitude': getattr(self.resource, 'latitude', None),
             'longitude': getattr(self.resource, 'latitude', None),
-            'distributed_cloud_role': self.resource.distributed_cloud_role
+            'distributed_cloud_role': self.distributed_cloud_role
         }
+
+    def value_from_config(self, name):
+        if hasattr(self.resource, name):
+            value = getattr(self.resource, name)
+        else:
+            value = self.config.get(name, 'null')
+        if isinstance(value, str):
+            return value.lower()
+        return value
 
     @property
     def region_name(self):
@@ -90,26 +105,19 @@ class SystemResource(ConfigurationResource):
 
     @property
     def distributed_cloud_role(self):
-        if self.resource.distributed_cloud_role.lower() == 'null':
-            return
-        return self.resource.distributed_cloud_role
+        return self.value_from_config('distributed_cloud_role')
 
     @property
     def system_type(self):
-        return self.resource.system_type
+        return self.value_from_config('system_type')
 
     @property
     def system_mode(self):
-        return self.resource.system_mode
-
-    def value_from_config(self, name):
-        return self.config.get(name, 'null').lower()
+        return self.value_from_config('system_mode')
 
     @property
     def is_standalone_system(self):
-        if not self.distributed_cloud_role or \
-                self.value_from_config(
-                    'distributed_cloud_role') in NOT_STANDALONE:
+        if self.value_from_config('distributed_cloud_role') in STANDALONE:
             return True
         return False
 
