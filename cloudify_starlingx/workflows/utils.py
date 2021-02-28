@@ -15,6 +15,7 @@
 
 
 import sys
+from time import sleep
 from copy import deepcopy
 
 from cloudify.workflows import ctx as wtx
@@ -22,6 +23,9 @@ from cloudify.manager import get_rest_client
 from cloudify.exceptions import NonRecoverableError
 from cloudify.utils import exception_to_error_cause
 from dcmanagerclient.exceptions import APIException
+from cloudify_rest_client.exceptions import (
+    CloudifyClientError,
+    DeploymentEnvironmentCreationPendingError)
 
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
@@ -73,6 +77,8 @@ def get_node_instances_by_type(node_type, deployment_id, rest_client):
         if node_type in node.type_hierarchy:
             for node_instance in rest_client.node_instances.list(
                     node_id=node.id):
+                if node_instance.state != 'started':
+                    continue
                 node_instances.append(node_instance)
     return node_instances
 
@@ -95,7 +101,7 @@ def update_runtime_properties(instance,
         props = deepcopy(instance.runtime_properties)
         prop = props.get(prop_name, {})
         if resource.resource_id not in prop:
-            prop.update({resource.resource_id: resource.to_dict()})
+            prop.update(**resource.to_dict())
         props[prop_name] = prop
         rest_client.node_instances.update(instance.id,
                                           instance.state,
@@ -137,8 +143,30 @@ def create_deployment(inputs, blueprint_id, deployment_id, rest_client):
 
 
 @with_rest_client
+def install_deployment(deployment_id, rest_client):
+    attempts = 0
+    while True:
+        try:
+            rest_client.executions.start(deployment_id, 'install')
+        except DeploymentEnvironmentCreationPendingError:
+            attempts += 1
+            sleep(5)
+            pass
+        else:
+            break
+
+
+@with_rest_client
 def get_node_instance(node_instance_id, rest_client):
     return rest_client.node_instance.get(node_instance_id=node_instance_id)
+
+
+@with_rest_client
+def get_deployment(deployment_id, rest_client):
+    try:
+        return rest_client.deployments.get(deployment_id=deployment_id)
+    except CloudifyClientError:
+        return
 
 
 @with_rest_client
@@ -161,25 +189,36 @@ def get_controller_node_instance(node_instance_id=None,
 
     ctx = ctx or wtx
     if node_instance_id:
-        controller_node_instances = [get_node_instance(
+        node_instances = [get_node_instance(
             node_instance_id=node_instance_id)]
     elif node_id:
         controller_node = ctx.get_node(node_id)
-        controller_node_instances = controller_node.instances
+        node_instances = controller_node.instances
     else:
-        controller_node_instances = get_instances_of_nodes(
+        node_instances = get_instances_of_nodes(
             node_type=CONTROLLER_TYPE, deployment_id=ctx.deployment.id)
 
-    if len(controller_node_instances) != 1:
+    controllers = []
+    for node_instance in node_instances:
+        resource_config = node_instance.runtime_properties.get(
+            'resource_config', {})
+        distributed_cloud_role = resource_config.get(
+            'distributed_cloud_role', '')
+        if not isinstance(distributed_cloud_role, str):
+            distributed_cloud_role = str(distributed_cloud_role)
+        if distributed_cloud_role == 'systemcontroller':
+            controllers.append(node_instance)
+
+    if len(controllers) != 1:
         raise NonRecoverableError(
             'Expected only one node SystemController node instance. '
             'Exactly {ll} were found: [{nn}]. '
             'Provide the ID of a specific SystemController node instance '
             'using the node_instance_id parameter.'.format(
-                ll=len(controller_node_instances),
-                nn=controller_node_instances))
+                ll=len(controllers),
+                nn=controllers))
 
-    return controller_node_instances[0]
+    return controllers[0]
 
 
 def get_system(controller_node):

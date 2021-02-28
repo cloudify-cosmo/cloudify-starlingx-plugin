@@ -33,7 +33,6 @@ def poststart(resource, ctx):
     # Collect basic info: distributed_cloud_role, uuid, name, system mode/type
     update_prop_resource(ctx.instance, resource)
     update_prop_resources(ctx.instance, resource.host_resources, 'hosts')
-    ctx.logger.info('Resource: {}'.format(resource.is_system_controller, resource.to_dict()))
     # If subcloud, collect oam_floating_ip, management_state, etc.
     if resource.is_subcloud:
         update_prop_resource(

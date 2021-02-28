@@ -16,7 +16,6 @@
 from copy import deepcopy
 
 from cgtsclient.client import get_client
-from cgtsclient.exc import HTTPNotFound
 
 from ..common import StarlingXResource
 from .distributed_cloud import SubcloudResource
@@ -76,12 +75,11 @@ class SystemResource(ConfigurationResource):
         return self.connection.isystem.get(name)
 
     def to_dict(self):
-        self.logger.info(self.resource.__dict__)
         return {
-            'external_id': self.resource_id,
-            'name': self.resource.name,
-            'description': self.resource.description,
-            'location': self.resource.location,
+            'external_id': self.value_from_config('uuid'),
+            'name': self.value_from_config('name'),
+            'description': self.value_from_config('description'),
+            'location': self.value_from_config('location'),
             'system_type': self.system_type,
             'system_mode': self.system_mode,
             'region_name': self.region_name,
@@ -185,7 +183,7 @@ class SystemResource(ConfigurationResource):
         """
         host_list = []
         for host in self.connection.ihost.list():
-            if host.isystem_uuid == self.resource_id:
+            if host.isystem_uuid == self.value_from_config('uuid'):
                 host_list.append(host)
         return host_list
 

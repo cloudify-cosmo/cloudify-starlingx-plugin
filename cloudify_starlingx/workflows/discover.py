@@ -15,10 +15,13 @@
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
+from cloudify.exceptions import NonRecoverableError
 
 from .utils import (
     get_system,
+    get_deployment,
     create_deployment,
+    install_deployment,
     update_runtime_properties,
     get_controller_node_instance)
 
@@ -48,9 +51,6 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
         ctx.logger.error(
             'System {s} has no subclouds.'.format(s=system.resource_id))
     else:
-        ctx.logger.info(
-            'System {s} has subclouds. Storing...'.format(
-                s=system.resource_id))
         update_runtime_properties(
             instance=controller_node_instance,
             resources=system.subcloud_resources,
@@ -67,6 +67,8 @@ def deploy_subcloud(inputs, blueprint_id, deployment_id=None, ctx=None):
     create_deployment(inputs=inputs,
                       blueprint_id=blueprint_id,
                       deployment_id=deployment_id)
+    ctx.logger.info('Installing deployment {dep}.'.format(dep=deployment_id))
+    install_deployment(deployment_id)
 
 
 @workflow
@@ -77,11 +79,8 @@ def discover_and_deploy(node_id=None,
                         ctx=None,
                         **_):
 
-    # Todo: Make this idempotent
-    # I.e. First, we do not discover the same cloud twice.
-    # I.e. Second, we do not deploy the same cloud twice.
-    # I.e. Check and see if discovered subclouds still exist.
     ctx = ctx or wtx
+    blueprint_id = blueprint_id or ctx.blueprint.id
     discover_subclouds(node_instance_id=node_instance_id,
                        node_id=node_id,
                        ctx=ctx)
@@ -91,9 +90,29 @@ def discover_and_deploy(node_id=None,
     subclouds = controller_node_instance.runtime_properties.get(
         'subclouds', {})
 
-    for subcloud in subclouds.values():
+    if deployment_id and len(subclouds) > 1:
+        raise NonRecoverableError(
+            'A deployment ID {dep} was provided, '
+            'but more than one subcloud must be deploymed. '
+            'Either leave deployment ID blank, '
+            'or ensure only one subcloud will be provided.'.format(
+                dep=deployment_id))
+
+    for _, subcloud in subclouds.items():
+
         subcloud_name = subcloud.get('name')
-        deployment_id = deployment_id or subcloud_name
+
+        _deployment_id = deployment_id or '{cid}-{sub}'.format(
+            cid=controller_node_instance.id,
+            sub=subcloud_name
+        )
+
+        if get_deployment(_deployment_id):
+            ctx.logger.info(
+                'A deployment for subcloud {sub} {dep} already exists.'.format(
+                    sub=subcloud_name, dep=_deployment_id))
+            continue
+
         # How do we get the system object for the subcloud?
         # system = get_system(ctx.get_node(subcloud_name))
         inputs = {
@@ -105,6 +124,6 @@ def discover_and_deploy(node_id=None,
         }
         deploy_subcloud(
             blueprint_id=blueprint_id,
-            deployment_id=deployment_id,
+            deployment_id=_deployment_id,
             inputs=inputs,
             ctx=ctx)

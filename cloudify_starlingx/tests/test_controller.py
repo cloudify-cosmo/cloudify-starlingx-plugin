@@ -45,7 +45,10 @@ class StarlingXControllerTest(StarlingXTestBase):
             'system_mode': 'simplex'
         }
         # Test that everything goes smoothly with a valid configuration.
-        poststart(ctx=ctx)
+        with patch('cloudify_starlingx_sdk.'
+                   'resources.configuration.'
+                   'SystemResource.is_subcloud', return_value=True):
+            poststart(ctx=ctx)
         expected = {
             'name',
             'location',

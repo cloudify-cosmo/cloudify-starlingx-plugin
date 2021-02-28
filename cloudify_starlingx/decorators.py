@@ -48,6 +48,8 @@ def with_starlingx_resource(class_decl):
                     resource_config=resource_config,
                     logger=ctx.logger)
                 func(resource, ctx)
+            except FATAL as e:
+                raise NonRecoverableError('Fatal error: {e}'.format(e=str(e)))
             except Exception as errors:
                 _, _, tb = sys.exc_info()
                 if hasattr(errors, 'message'):
@@ -58,7 +60,5 @@ def with_starlingx_resource(class_decl):
                     'Failure while trying to run operation:'
                     '{0}: {1}'.format(ctx.operation.name, message),
                     causes=[exception_to_error_cause(errors, tb)])
-            except FATAL as e:
-                raise NonRecoverableError('Fatal error: {e}'.format(e=str(e)))
         return wrapper_inner
     return wrapper_outer
