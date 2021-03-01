@@ -19,7 +19,7 @@ import pytest
 
 from ecosystem_tests.dorkl import (
     basic_blueprint_test,
-    cleanup_on_failure, prepare_test
+    cleanup_on_failure,
 )
 
 SECRETS_TO_CREATE = {
@@ -48,7 +48,7 @@ def blueprint_examples(request):
             inputs={'controller_uuid': '',
                     'controller_name': ''},
         )
-    except:
+    except Exception:
         cleanup_on_failure(test_name)
         raise
 

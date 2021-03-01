@@ -40,7 +40,11 @@ class StarlingXTestBase(unittest.TestCase):
         }
         ctx.node = node
         instance = unittest.mock.MagicMock()
-        instance.runtime_properties = {}
+        instance.runtime_properties = {
+            'resource_config': {
+                'distributed_cloud_role': 'systemcontroller'
+            }
+        }
         instance.node_id = node_name
         ctx.instance = instance
         ctx._context = {'node_id': node_name}
@@ -59,5 +63,6 @@ class StarlingXTestBase(unittest.TestCase):
         ctx.node.instances = [ctx.instance]
         ctx.get_node = unittest.mock.MagicMock(return_value=ctx.node)
         ctx.deployment.id = 'baz'
+        ctx.blueprint.id = 'baz'
 
         return ctx

@@ -13,133 +13,117 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
-from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 
-from dcmanagerclient.exceptions import APIException
-from cloudify_starlingx_sdk.resources.configuration import SystemResource
-
 from .utils import (
+    get_system,
+    get_deployment,
     create_deployment,
-    get_instances_of_nodes,
+    install_deployment,
     update_runtime_properties,
-    desecretize_client_config)
-
-CONTROLLER_TYPE = 'cloudify.nodes.starlingx.SystemController'
+    get_controller_node_instance)
 
 
 @workflow
-def discover_subclouds(node_id=None, ctx=None, **_):
+def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
     """ Discover subclouds of starlingx controllers.
     We either use a hint for a single controller or discover subclouds for
     all nodes in the deployment.  We get the controller objects, then we search
     those for subclouds related to that controller. We update the controller
     node instance runtime properties with a dict of related subclouds info.
 
+    :param node_instance_id: The node instance ID to discover on.
     :param node_id: A node ID hint.
     :param ctx: Cloudify workflo context
     :param _: Additional kwargs, which we ignore.
     :return: None
     """
 
+    # Todo: Check and see what needs to be done for rediscover.
     ctx = ctx or wtx
-    if node_id:
-        controller_node = ctx.get_node(node_id)
-        controller_node_instances = controller_node.instances
+    controller_node_instance = get_controller_node_instance(
+        node_instance_id, node_id, ctx=ctx)
+    system = get_system(
+        ctx.get_node(controller_node_instance.node_id))
+    if not system.subcloud_resources:
+        ctx.logger.error(
+            'System {s} has no subclouds.'.format(s=system.resource_id))
     else:
-        controller_node_instances = get_instances_of_nodes(
-            node_type=CONTROLLER_TYPE, deployment_id=ctx.deployment.id)
-
-    for controller_node_instance in controller_node_instances:
-        # For each node perform discover subcloud process
-        subclouds = discover_subcloud(controller_node_instance, ctx)
         update_runtime_properties(
             instance=controller_node_instance,
-            resources=subclouds,
-            prop_name='subcloud')
-
-
-def discover_subcloud(controller_node, ctx=None):
-    """ For a provided cloudify node object of controller type, we scan for
-    related subclouds.
-
-    :param controller_node: Cloudify node rest API object.
-    :return list: subclouds
-    """
-    ctx = ctx or wtx
-    node = ctx.get_node(node_id=controller_node.node_id)
-    client_config = desecretize_client_config(
-            node.properties.get('client_config', {}))
-    try:
-        return SystemResource(
-            client_config=client_config,
-            resource_config=node.properties.get('resource_config'),
-            logger=ctx.logger
-        ).subcloud_resources
-    except APIException as errors:
-        _, _, tb = sys.exc_info()
-        if hasattr(errors, 'message'):
-            message = errors.message
-        else:
-            message = ''
-        message += str([exception_to_error_cause(errors, tb)])
-        if 'Subcloud not found' not in message:
-            raise NonRecoverableError(
-                'Failure while trying to discover subclouds:'
-                ': {0}'.format(message))
-        else:
-            ctx.logger.error('No subclouds identified.')
-        return []
+            resources=system.subcloud_resources,
+            prop_name='subclouds')
 
 
 @workflow
 def deploy_subcloud(inputs, blueprint_id, deployment_id=None, ctx=None):
     ctx = ctx or wtx
     ctx.logger.info(
-        'Creating Deployment {_did} from blueprint {_bid}.'.format(
-            _bid=blueprint_id, _did=deployment_id or blueprint_id))
+        'Creating deployment {dep} with blueprint {blu} '
+        'with these inputs: {inp}'.format(
+            dep=deployment_id, blu=blueprint_id, inp=inputs))
     create_deployment(inputs=inputs,
                       blueprint_id=blueprint_id,
                       deployment_id=deployment_id)
+    ctx.logger.info('Installing deployment {dep}.'.format(dep=deployment_id))
+    install_deployment(deployment_id)
 
 
 @workflow
-def discover_and_deploy(blueprint_id,
-                        node_id=None,
+def discover_and_deploy(node_id=None,
+                        node_instance_id=None,
                         deployment_id=None,
-                        ctx=None):
+                        blueprint_id=None,
+                        ctx=None,
+                        **_):
 
     ctx = ctx or wtx
-    discover_subclouds(node_id, ctx)
+    blueprint_id = blueprint_id or ctx.blueprint.id
+    discover_subclouds(node_instance_id=node_instance_id,
+                       node_id=node_id,
+                       ctx=ctx)
+    controller_node_instance = get_controller_node_instance(
+        node_instance_id, node_id, ctx=ctx)
 
-    if node_id:
-        controller_node = ctx.get_node(node_id)
-        controller_node_instances = controller_node.instances
-    else:
-        controller_node_instances = get_instances_of_nodes(
-            node_type=CONTROLLER_TYPE, deployment_id=ctx.deployment.id)
+    subclouds = controller_node_instance.runtime_properties.get(
+        'subclouds', {})
 
-    for controller_node_instance in controller_node_instances:
-        subcloud = controller_node_instance.runtime_properties.get(
-            'subcloud', {})
-        if subcloud:
-            deployment_id = deployment_id or controller_node_instance.id
-            controller_uuid = subcloud.get('controller_uuid')
-            controller_name = subcloud.get('controller_name')
-            inputs = {
-                'controller_uuid': controller_uuid,
-                'controller_name': controller_name
-            }
+    if deployment_id and len(subclouds) > 1:
+        raise NonRecoverableError(
+            'A deployment ID {dep} was provided, '
+            'but more than one subcloud must be deploymed. '
+            'Either leave deployment ID blank, '
+            'or ensure only one subcloud will be provided.'.format(
+                dep=deployment_id))
+
+    for _, subcloud in subclouds.items():
+
+        subcloud_name = subcloud.get('name')
+
+        _deployment_id = deployment_id or '{cid}-{sub}'.format(
+            cid=controller_node_instance.id,
+            sub=subcloud_name
+        )
+
+        if get_deployment(_deployment_id):
             ctx.logger.info(
-                'Creating deployment {dep} with blueprint {blu} '
-                'with these inputs: {inp}'.format(
-                    dep=deployment_id, blu=blueprint_id, inp=inputs))
-            deploy_subcloud(
-                blueprint_id=blueprint_id,
-                deployment_id=deployment_id,
-                inputs=inputs,
-                ctx=ctx)
+                'A deployment for subcloud {sub} {dep} already exists.'.format(
+                    sub=subcloud_name, dep=_deployment_id))
+            continue
+
+        # How do we get the system object for the subcloud?
+        # system = get_system(ctx.get_node(subcloud_name))
+        inputs = {
+            'system_uuid': 'null',
+            'system_name': subcloud_name,
+            'distributed_cloud_role': 'subcloud',
+            'system_type': 'null',
+            'system_mode': 'null'
+        }
+        deploy_subcloud(
+            blueprint_id=blueprint_id,
+            deployment_id=_deployment_id,
+            inputs=inputs,
+            ctx=ctx)

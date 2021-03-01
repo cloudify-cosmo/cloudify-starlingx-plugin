@@ -33,6 +33,7 @@ def get_version(rel_file='plugin.yaml'):
             return line_no_quotes.strip('\n')
     raise RuntimeError('Unable to find version string.')
 
+
 setup(
     name="cloudify-starlingx-plugin",
     version=get_version(),
@@ -46,5 +47,6 @@ setup(
         'cgtsclient',
         'httplib2',
         'cloudify-common',
+        'babel',  # Required by distributedcloud-client
     ]
 )

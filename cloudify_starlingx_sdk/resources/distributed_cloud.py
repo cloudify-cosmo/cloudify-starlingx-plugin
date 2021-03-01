@@ -83,8 +83,8 @@ class SubcloudResource(DistributedCloudResource):
 
     def get_subcloud_as_dict(self, resource):
         return {
-            resource.subcloud_id: {
-                'external_id': resource.subcloud_id,
+            str(resource.subcloud_id): {
+                'external_id': str(resource.subcloud_id),
                 'name': resource.name,
                 'description': resource.description,
                 'location': resource.location,
