@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
+
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
 from cloudify.exceptions import NonRecoverableError
@@ -79,6 +81,13 @@ def discover_and_deploy(node_id=None,
                         ctx=None,
                         **_):
 
+    def generate_deployment_id(subclouds_name):
+        deployment_name = '{sub}_{cid}'.format(
+            sub=subclouds_name,
+            cid=controller_node_instance.id
+        )
+        return base64.b64encode(deployment_name.encode('UTF-8'))
+
     ctx = ctx or wtx
     blueprint_id = blueprint_id or ctx.blueprint.id
     discover_subclouds(node_instance_id=node_instance_id,
@@ -102,10 +111,7 @@ def discover_and_deploy(node_id=None,
 
         subcloud_name = subcloud.get('name')
 
-        _deployment_id = deployment_id or '{cid}-{sub}'.format(
-            cid=controller_node_instance.id,
-            sub=subcloud_name
-        )
+        _deployment_id = deployment_id or generate_deployment_id(subcloud_name)
 
         if get_deployment(_deployment_id):
             ctx.logger.info(
