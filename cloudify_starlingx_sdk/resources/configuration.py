@@ -58,6 +58,7 @@ class SystemResource(ConfigurationResource):
         self._host_resources = None
         self._subcloud_resource = None
         self._subcloud_resources = None
+        self._kube_cluster_resources = None
 
     def list(self):
         return self.connection.isystem.list()
@@ -203,6 +204,34 @@ class SystemResource(ConfigurationResource):
         return self._host_resources
 
 
+    @property
+    def kube_clusters(self):
+        """ This is a list of raw hosts.
+        """
+        kube_cluster_list = []
+        for kube_cluster in self.connection.kube_cluster.list():
+            kube_cluster_list.append(kube_cluster)
+        return kube_cluster_list
+
+    @property
+    def kube_cluster_resources(self):
+        """ This is a list of the host resource objects.
+        I.e. interfaces for storing properties in runtime, etc.
+        """
+        kube_cluster_resources = []
+        if not self._kube_cluster_resources:
+            for kube_cluster in self.kube_clusters:
+                kube_cluster_resources.append(
+                    KubeClusterResource(
+                        client_config=self.client_config,
+                        resource_config={
+                            'cluster_name': kube_cluster.cluster_name
+                        },
+                        logger=self.logger))
+            self._kube_cluster_resources = kube_cluster_resources
+        return self._kube_cluster_resources
+
+
 class HostResource(ConfigurationResource):
 
     def list(self):
@@ -238,4 +267,29 @@ class ApplicationResource(ConfigurationResource):
             'app_version': self.resource.app_version,
             'manifest_name': self.resource.manifest_name,
             'manifest_file': self.resource.manifest_file,
+        }
+
+
+class KubeClusterResource(ConfigurationResource):
+
+    id_key = 'cluster_name'
+
+    def list(self):
+        return self.connection.kube_cluster.list()
+
+    def get(self):
+        return self.connection.kube_cluster.get(self.resource_id)
+
+    def to_dict(self):
+        return {
+            self.resource.cluster_name: {
+                'admin_user': self.resource.admin_user,
+                'admin_token': self.resource.admin_token,
+                'cluster_api_endpoint': self.resource.cluster_api_endpoint,
+                'admin_client_cert': self.resource.admin_client_cert,
+                'cluster_name': self.resource.cluster_name,
+                'cluster_ca_cert': self.resource.cluster_ca_cert,
+                'cluster_version': self.resource.cluster_version,
+                'admin_client_key': self.resource.admin_client_key
+            }
         }

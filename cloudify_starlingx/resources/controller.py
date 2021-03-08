@@ -16,7 +16,10 @@
 from cloudify.exceptions import NonRecoverableError
 
 from ..decorators import with_starlingx_resource
-from ..utils import update_prop_resource, update_prop_resources
+from ..utils import (
+    update_prop_resource,
+    update_prop_resources,
+    update_kubernetes_props)
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 
@@ -33,6 +36,8 @@ def poststart(resource, ctx):
     # Collect basic info: distributed_cloud_role, uuid, name, system mode/type
     update_prop_resource(ctx.instance, resource)
     update_prop_resources(ctx.instance, resource.host_resources, 'hosts')
+    update_prop_resources(
+        ctx.instance, resource.kube_cluster_resources, 'kube_clusters')
     # If subcloud, collect oam_floating_ip, management_state, etc.
     if resource.is_subcloud:
         update_prop_resource(
@@ -50,3 +55,7 @@ def poststart(resource, ctx):
             'Unsupported system type: '
             'the system is neither a standalone system, system controller, '
             'nor a subcloud.')
+
+    # TODO: Add the Kubernetes Cluster properties.
+    if resource.kube_cluster_resources:
+        update_kubernetes_props(ctx.instance, resource.kube_cluster_resources)

@@ -22,7 +22,6 @@ from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 
 from .utils import resolve_ctx
-from cloudify_starlingx_sdk.constants import FATAL
 
 
 def with_starlingx_resource(class_decl):
@@ -48,8 +47,6 @@ def with_starlingx_resource(class_decl):
                     resource_config=resource_config,
                     logger=ctx.logger)
                 func(resource, ctx)
-            except FATAL as e:
-                raise NonRecoverableError('Fatal error: {e}'.format(e=str(e)))
             except Exception as errors:
                 _, _, tb = sys.exc_info()
                 if hasattr(errors, 'message'):

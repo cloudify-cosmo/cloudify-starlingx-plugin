@@ -72,3 +72,14 @@ def update_prop_resource(ctx_instance, resource, config_key=None):
 def update_prop_resources(ctx_instance, resources, config_key=None):
     for resource in resources:
         update_prop_resource(ctx_instance, resource, config_key)
+
+
+def update_kubernetes_props(ctx_instance, resources):
+    for cluster in resources:
+        ctx_instance.runtime_properties['k8s_ip'] = \
+            cluster.resource.cluster_api_endpoint
+        ctx_instance.runtime_properties['k8s_service_account_token'] = \
+            cluster.resource.admin_token
+        ctx_instance.runtime_properties['k8s_cert'] = \
+            cluster.resource.cluster_ca_cert
+        break

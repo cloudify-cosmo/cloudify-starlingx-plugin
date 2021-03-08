@@ -47,6 +47,9 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
     ctx = ctx or wtx
     controller_node_instance = get_controller_node_instance(
         node_instance_id, node_id, ctx=ctx)
+    if not controller_node_instance:
+        ctx.logger.error('No system controller nodes were identified.')
+        return False
     system = get_system(
         ctx.get_node(controller_node_instance.node_id))
     if not system.subcloud_resources:
@@ -57,6 +60,7 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
             instance=controller_node_instance,
             resources=system.subcloud_resources,
             prop_name='subclouds')
+    return True
 
 
 @workflow
@@ -86,13 +90,17 @@ def discover_and_deploy(node_id=None,
             sub=subclouds_name,
             cid=controller_node_instance.id
         )
-        return base64.b64encode(deployment_name.encode('UTF-8'))
+        return base64.b64encode(
+            deployment_name.encode('UTF-8')).decode('UTF-8')
 
     ctx = ctx or wtx
     blueprint_id = blueprint_id or ctx.blueprint.id
-    discover_subclouds(node_instance_id=node_instance_id,
-                       node_id=node_id,
-                       ctx=ctx)
+    discovered_subclouds = discover_subclouds(
+        node_instance_id=node_instance_id,
+        node_id=node_id,
+        ctx=ctx)
+    if not discovered_subclouds:
+        return
     controller_node_instance = get_controller_node_instance(
         node_instance_id, node_id, ctx=ctx)
 
@@ -122,6 +130,7 @@ def discover_and_deploy(node_id=None,
         # How do we get the system object for the subcloud?
         # system = get_system(ctx.get_node(subcloud_name))
         inputs = {
+            'environment_type': 'Wind-River-Cloud-Platform-Subcloud',
             'system_uuid': 'null',
             'system_name': subcloud_name,
             'distributed_cloud_role': 'subcloud',

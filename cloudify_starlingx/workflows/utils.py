@@ -210,13 +210,14 @@ def get_controller_node_instance(node_instance_id=None,
             controllers.append(node_instance)
 
     if len(controllers) != 1:
-        raise NonRecoverableError(
+        ctx.logger.debug(
             'Expected only one node SystemController node instance. '
             'Exactly {ll} were found: [{nn}]. '
             'Provide the ID of a specific SystemController node instance '
             'using the node_instance_id parameter.'.format(
                 ll=len(controllers),
                 nn=controllers))
+        return
 
     return controllers[0]
 

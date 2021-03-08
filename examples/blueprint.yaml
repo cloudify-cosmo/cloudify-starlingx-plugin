@@ -4,20 +4,47 @@ imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
 
-#blueprint_labels:
-#  csys-obj-type:
-#    values:
-#    - environment
+blueprint_labels:
+  csys-obj-type:
+    values:
+    - environment
+
+  csys-env-type:
+    values:
+    - wrcp
+
+labels:
+
+  csys-obj-type:
+    values:
+    - environment
+
 #  csys-env-type:
 #    values:
-#    - wrcp
-#
-#labels:
-#  csys-obj-type:
+#    - { get_input: environment_type }
+
+#  csys-location-name:
 #    values:
-#    - environment
+#    - { get_attribute: wcrp, location }
+#
+#  csys-location-lat:
+#    values:
+#    - { get_attribute: wcrp, latitude }
+#
+#  csys-location-long:
+#    values:
+#    - { get_attribute: wcrp, longitude }
+#
+#  csys-wrcp-services:
+#    values:
+#    - { get_attribute: wcrp, services }
 
 inputs:
+
+  environment_type:
+    type: string
+    description: A user-defined label for the type of environment.
+    default: 'Wind-River-Cloud-Platform-System-Controller'
 
   # System Information
   system_uuid:
