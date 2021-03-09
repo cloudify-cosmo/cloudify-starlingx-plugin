@@ -80,7 +80,7 @@ data_types:
           but will override other values in the client config.
         default: {}
 
-  cloudify.types.starlingx.System:
+  cloudify.types.starlingx.WRCP:
     properties:
       uuid:
         type: string
@@ -89,18 +89,23 @@ data_types:
       name:
         type: string
         description: The human readable name.
+        default: ''
       description:
         type: string
         description: Free text description of the system.
+        default: ''
       distributed_cloud_role:
         type: string
         description: The role of the system in a distributed cloud.
+        default: ''
       system_type:
         type: string
         description: The type of system. Either standard or all-in-one.
+        default: ''
       system_mode:
         type: string
         description: The mode the the system. Either simplex, duplex, or duplex-direct.
+        default: ''
       location:
         type: string
         description: Textual description of the system.
@@ -116,22 +121,17 @@ data_types:
 
 node_types:
 
-  cloudify.nodes.starlingx.System:
+  cloudify.nodes.starlingx.WRCP:
     derived_from: cloudify.nodes.Root
     properties:
       <<: *external_resource
       <<: *client_config
       resource_config:
-        type: cloudify.types.starlingx.System
+        type: cloudify.types.starlingx.WRCP
     interfaces:
       cloudify.interfaces.lifecycle:
         poststart:
-          implementation: starlingx.cloudify_starlingx.resources.controller.poststart
-
-relationships:
-
-  cloudify.relationships.starlingx.subcloud_connected_to_system_controller:
-    derived_from: cloudify.relationships.connected_to
+          implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
 
 workflows:
 

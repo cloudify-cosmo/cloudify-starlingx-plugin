@@ -122,6 +122,10 @@ def get_kube_clusters():
     return config_client.kube_cluster.list()
 
 
+def get_service_parameter():
+    return config_client.service_parameter.list()
+
+
 def print_hosts_for_system(system_id):
     for host in get_hosts():
         if host.isystem_uuid == system_id:
@@ -156,6 +160,12 @@ def print_subcloud_system_controller(system_name):
 def print_kube_cluster():
     for kube_cluster in get_kube_clusters():
         print(kube_cluster.__dict__)
+
+
+def print_service_parameter():
+    for service_parameter in get_service_parameter():
+        if service_parameter == 'openstack':
+            print(service_parameter)
 
 
 def print_applications():
@@ -222,6 +232,7 @@ def show_system_info():
 
     # print_kube_cluster()
     # print_applications()
+    # print_service_parameter()
 
 
 def show_diagnostics():

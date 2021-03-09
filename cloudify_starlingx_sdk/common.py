@@ -14,6 +14,9 @@
 # limitations under the License.
 
 
+from copy import deepcopy
+
+
 class InvalidINSecureValue(Exception):
     pass
 
@@ -29,11 +32,12 @@ class StarlingXResource(object):
 
     def __init__(self, client_config, resource_config=None, logger=None):
         self.logger = logger
-        self.client_config = self.cleanup_config(client_config)
+        self.client_config = self.merge_configs(client_config)
         self.config = resource_config or {}
         self.resource_id = self.get_identifier()
         self.name = self.config.get(self.name_key)
         self._resource = None
+        self._connection = None
 
     @property
     def connection(self):
@@ -43,13 +47,27 @@ class StarlingXResource(object):
     def auth_url(self):
         return self.client_config.get('auth_url')
 
+    def cleanup_auth_url(self, auth_url):
+        if not auth_url.startswith('http://') and not \
+                auth_url.startswith('https://'):
+            auth_url = 'http://{u}'.format(u=auth_url)
+        if not auth_url.endswith(':5000/v3'):
+            auth_url = '{u}:5000/v3'.format(u=auth_url)
+        return auth_url
+
     @staticmethod
     def cleanup_config(config):
+        return deepcopy(config)
+
+    def merge_configs(self, config):
         kwargs = config.pop('kwargs', {})
         config.update(kwargs)
         os_kwargs = config.pop('os_kwargs', {})
         config.update(os_kwargs)
-        return config
+        for key in ['os_auth_url', 'auth_url']:
+            if key in config:
+                config[key] = self.cleanup_auth_url(config[key])
+        return self.cleanup_config(config)
 
     def list(self):
         raise NotImplementedError()

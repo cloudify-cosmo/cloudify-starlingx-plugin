@@ -16,22 +16,30 @@
 from copy import deepcopy
 
 from ..common import StarlingXResource
+
 from dcmanagerclient.api import client
+from keystoneauth1.exceptions.catalog import EndpointNotFound
 
 
 class DistributedCloudResource(StarlingXResource):
 
-    @property
-    def connection(self):
-        creds = deepcopy(self.client_config)
+    @staticmethod
+    def cleanup_config(config):
+        creds = deepcopy(config)
         for key, val in list(creds.items()):
             if key.startswith('os_'):
-                creds[key.lsplit('os_')[0]] = creds.pop(key)
+                creds[key.split('os_')[1]] = creds.pop(key)
             if 'password' in creds:
                 creds['api_key'] = creds.pop('password')
         if 'api_version' in creds:
             del creds['api_version']
-        return client.client(**creds)
+        return creds
+
+    @property
+    def connection(self):
+        if not self._connection:
+            self._connection = client.client(**self.client_config)
+        return self._connection
 
     def list(self):
         raise NotImplementedError()
@@ -48,8 +56,11 @@ class SubcloudResource(DistributedCloudResource):
         return self.connection.subcloud_manager.list_subclouds()
 
     def _get(self, resource_id):
-        result = self.connection.subcloud_manager.subcloud_detail(
-            resource_id)
+        try:
+            result = self.connection.subcloud_manager.subcloud_detail(
+                resource_id)
+        except EndpointNotFound:
+            return None
         # I am not sure why they return a list here.
         if len(result) == 1:
             return result[0]

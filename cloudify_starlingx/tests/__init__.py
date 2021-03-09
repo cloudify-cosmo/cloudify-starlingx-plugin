@@ -32,7 +32,7 @@ class StarlingXTestBase(unittest.TestCase):
             'client_config': {
                 'api_version': 'v1',
                 'username': 'foo',
-                'password': 'bar',
+                'api_key': 'bar',
                 'auth_url': 'baz',
                 'region_name': 'taco'
             },

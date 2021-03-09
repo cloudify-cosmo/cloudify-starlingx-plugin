@@ -5,6 +5,7 @@ imports:
   - plugin:cloudify-starlingx-plugin
 
 blueprint_labels:
+
   csys-obj-type:
     values:
     - environment
@@ -17,88 +18,48 @@ labels:
 
   csys-obj-type:
     values:
-    - environment
+     - environment
 
-#  csys-env-type:
-#    values:
-#    - { get_input: environment_type }
+  csys-env-type:
+    values: []
 
-#  csys-location-name:
-#    values:
-#    - { get_attribute: wcrp, location }
-#
-#  csys-location-lat:
-#    values:
-#    - { get_attribute: wcrp, latitude }
-#
-#  csys-location-long:
-#    values:
-#    - { get_attribute: wcrp, longitude }
-#
-#  csys-wrcp-services:
-#    values:
-#    - { get_attribute: wcrp, services }
+  csys-obj-parent:
+    values: []
+
+  csys-location-name:
+    values: []
+
+  csys-location-lat:
+    values: []
+
+  csys-location-long:
+    values: []
+
+  csys-wrcp-services:
+    values: []
 
 inputs:
 
-  environment_type:
-    type: string
-    description: A user-defined label for the type of environment.
-    default: 'Wind-River-Cloud-Platform-System-Controller'
+#  Type: # Type
+#    type: string
+#    description: A user-defined label for the type of environment.
+#    default: '' # 'Wind-River-Cloud-Platform-System-Controller' # Change inside the plugin as well.
+#
+#  parent:
+#    type: string
+#    description: The ID of the Controller managing this subcloud in case this is a manual subcloud installation.
+#    default: 'NULL'
 
-  # System Information
-  system_uuid:
+  IP:
     type: string
-    default: ''
 
-  system_name:
-    type: string
-    default: ''
-
-  description:
-    type: string
-    default: 'WRCP'
-
-  distributed_cloud_role:
-    type: string
-    default: ''
-
-  system_type:
-    type: string
-    default: ''
-
-  system_mode:
-    type: string
-    default: ''
-
-  # Authentication Secret Keys
-  auth_url_key:
-    type: string
-    default: starlingx_auth_url
-
-  username_key:
+  User-secret:
     type: string
     default: starlingx_username
 
-  api_key:
+  Password-secret:
     type: string
     default: starlingx_api_key
-
-  project_name_key:
-    type: string
-    default: starlingx_project_name
-
-  user_domain_name_key:
-    type: string
-    default: starlingx_user_domain_name
-
-  project_domain_name_key:
-    type: string
-    default: starlingx_project_domain_name
-
-  project_domain_id_key:
-    type: string
-    default: starlingx_project_domain_id
 
   region_name:
     type: string
@@ -107,59 +68,52 @@ inputs:
 dsl_definitions:
 
   client_config: &client_config
-    auth_url: { get_secret: { get_input: auth_url_key } }
-    username: { get_secret: { get_input: username_key } }
-    api_key: { get_secret: { get_input: api_key } }
-    project_name: { get_secret: { get_input: project_name_key } }
-    user_domain_name: { get_secret: { get_input: user_domain_name_key } }
-    project_domain_name: { get_secret: { get_input: project_domain_name_key } }
-    project_domain_id: { get_secret: { get_input: project_domain_id_key } }
+    auth_url: { get_input: IP }
+    username: { get_secret: { get_input: User-secret } }
+    api_key: { get_secret: { get_input: Password-secret } }
+    project_name: admin
+    user_domain_name: Default
+    project_domain_name: default
+    project_domain_id: default
     region_name: { get_input: region_name }
 
 node_templates:
 
-  wcrp:
-    type: cloudify.nodes.starlingx.System
+  wrcp:
+    type: cloudify.nodes.starlingx.WRCP
     properties:
       client_config: *client_config
-      resource_config:
-        uuid: { get_input: system_uuid }
-        name: { get_input: system_name }
-        description: { get_input: description }
-        distributed_cloud_role: { get_input: distributed_cloud_role }
-        system_type: { get_input: system_type }
-        system_mode: { get_input: system_mode }
 
 capabilities:
 
   wrcp-ip:
     description: The external endpoint of the application.
-    value: { get_attribute: [ wcrp, public_ip ] }
+    value: { get_input: IP }
 
   wrcp-user-secret:
     description: the secret representing the wrcp access username
-    value: { get_attribute: [ wcrp, user_secret ] }
+    value: { get_input: User-secret }
 
   wrcp-pass-secret:
     description: The secret representing the wrcp access password.
-    value: { get_attribute: [ wcrp, pass_secret ] }
+    value: { get_input: Password-secret }
 
   k8s-IP:
     description: The IP required to access its Kubernetes cluster.
-    value: { get_attribute: [ wcrp, k8s_ip ] }
+    value: { get_attribute: [ wrcp, k8s_ip ] }
 
   k8s-service-account-token:
     description: The token required to access that k8s cluster.
-    value: { get_attribute: [ wcrp, k8s_service_account_token ] }
+    value: { get_attribute: [ wrcp, k8s_service_account_token ] }
 
   k8s-cert:
     description: The certificate required to access that k8s cluster.
-    value: { get_attribute: [ wcrp, k8s_cert ] }
+    value: { get_attribute: [ wrcp, k8s_cert ] }
 
   openstack-ip:
     description: Optional, if open stack is supported. The IP for the Openstack management.
-    value: { get_attribute: [ wcrp, openstack_ip ] }
+    value: { get_attribute: [ wrcp, openstack_ip ] }
 
   openstack-key:
     description: Optional, if open stack is supported. The access key for Openstack management
-    value: { get_attribute: [ wcrp, openstack_key ] }
+    value: { get_attribute: [ wrcp, openstack_key ] }

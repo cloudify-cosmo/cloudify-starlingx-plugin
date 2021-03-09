@@ -19,7 +19,7 @@ from cloudify.constants import NODE_INSTANCE
 from unittest.mock import patch, MagicMock
 
 from ..workflows import discover
-from ..workflows.utils import CONTROLLER_TYPE
+from ..utils import CONTROLLER_TYPE
 from . import StarlingXTestBase
 
 
@@ -57,13 +57,16 @@ class StarlingXWorkflowTest(StarlingXTestBase):
         mock_deployments_client = MagicMock()
         mock_deployments_client.create = MagicMock()
         mock_deployments_client.get.return_value = None
+        mock_deployment_groups_client = MagicMock()
+        mock_deployment_groups_client.put = MagicMock()
         mock_rest_client = MagicMock()
         mock_rest_client.nodes = mock_nodes_client
         mock_rest_client.node_instances = mock_instances_client
         mock_rest_client.deployments = mock_deployments_client
+        mock_rest_client.deployment_groups = mock_deployment_groups_client
         return mock_rest_client
 
-    @patch('cloudify_starlingx.workflows.utils.get_rest_client')
+    @patch('cloudify_starlingx.utils.get_rest_client')
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
     @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
     def test_discover_subclouds(self, _, __, get_rest_client):
@@ -72,21 +75,22 @@ class StarlingXWorkflowTest(StarlingXTestBase):
 
         ctx = self.get_mock_ctx('foo', reltype=NODE_INSTANCE)
         current_ctx.set(ctx)
-        with patch('cloudify_starlingx.workflows.utils.wtx', side_effect=ctx):
+        with patch('cloudify_starlingx.utils.wtx', side_effect=ctx):
             discover.discover_subclouds(node_id='foo', ctx=ctx)
         ctx.get_node.assert_called()
 
         ctx = self.get_mock_ctx('foo', reltype=NODE_INSTANCE)
         current_ctx.set(ctx)
-        with patch('cloudify_starlingx.workflows.utils.wtx', side_effect=ctx):
+        with patch('cloudify_starlingx.utils.wtx', side_effect=ctx):
             discover.discover_subclouds(ctx=ctx)
         assert mock_rest_client.nodes.list.called
         assert mock_rest_client.node_instances.list.called
 
-    @patch('cloudify_starlingx.workflows.utils.get_rest_client')
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    @patch('cloudify_starlingx.workflows.discover.discover_subclouds')
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
     @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
-    def test_discover_and_deploy(self, _, __, get_rest_client):
+    def test_discover_and_deploy(self, _, __, ___, get_rest_client):
         mock_rest_client = self.get_mock_rest_client()
         get_rest_client.return_value = mock_rest_client
         ctx = self.get_mock_ctx('foo', reltype=NODE_INSTANCE)
@@ -98,6 +102,10 @@ class StarlingXWorkflowTest(StarlingXTestBase):
             }
         }
         current_ctx.set(ctx)
-        with patch('cloudify_starlingx.workflows.utils.wtx', side_effect=ctx):
-            discover.discover_and_deploy(ctx=ctx)
-        assert mock_rest_client.deployments.create.called
+        node = get_rest_client().node_instances.list()[0]
+        with patch('cloudify_starlingx.utils.wtx', side_effect=ctx):
+            with patch('cloudify_starlingx.workflows.discover'
+                       '.get_controller_node_instance',
+                       return_value=node):
+                discover.discover_and_deploy(ctx=ctx)
+        assert mock_rest_client.deployment_groups.put.called
