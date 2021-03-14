@@ -48,5 +48,6 @@ setup(
         'httplib2',
         'cloudify-common',
         'babel',  # Required by distributedcloud-client
+        'PrettyTable<0.8,>=0.7.2',  # Required by distributedcloud-client
     ]
 )

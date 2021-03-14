@@ -30,9 +30,9 @@ class ConfigurationResource(StarlingXResource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @property
-    def connection(self):
-        creds = deepcopy(self.client_config)
+    @staticmethod
+    def cleanup_config(config):
+        creds = deepcopy(config)
         for key, val in list(creds.items()):
             if not key.startswith('os_'):
                 creds['os_{key}'.format(key=key)] = creds.pop(key)
@@ -41,7 +41,13 @@ class ConfigurationResource(StarlingXResource):
         if 'password' in creds:
             del creds['password']
         creds['api_version'] = 1
-        return get_client(**creds)
+        return creds
+
+    @property
+    def connection(self):
+        if not self._connection:
+            self._connection = get_client(**self.client_config)
+        return self._connection
 
     def list(self):
         raise NotImplementedError()
@@ -58,6 +64,8 @@ class SystemResource(ConfigurationResource):
         self._host_resources = None
         self._subcloud_resource = None
         self._subcloud_resources = None
+        self._kube_cluster_resources = None
+        self._service_parameter_resources = None
 
     def list(self):
         return self.connection.isystem.list()
@@ -134,7 +142,6 @@ class SystemResource(ConfigurationResource):
         if not self._subcloud_resource:
             self._subcloud_resource = SubcloudResource(
                 client_config=self.client_config,
-                resource_config=self.config,
                 logger=self.logger
             )
         return self._subcloud_resource
@@ -199,11 +206,72 @@ class SystemResource(ConfigurationResource):
                     HostResource(client_config=self.client_config,
                                  resource_config={'uuid': host.uuid},
                                  logger=self.logger))
+            # connection=self.connection))
             self._host_resources = host_resources
         return self._host_resources
 
+    @property
+    def kube_clusters(self):
+        """ This is a list of raw Kube clusters.
+        """
+        kube_cluster_list = []
+        for kube_cluster in self.connection.kube_cluster.list():
+            kube_cluster_list.append(kube_cluster)
+        return kube_cluster_list
+
+    @property
+    def kube_cluster_resources(self):
+        """ This is a list of the Kubernetes resource objects.
+        I.e. interfaces for storing properties in runtime, etc.
+        """
+        kube_cluster_resources = []
+        if not self._kube_cluster_resources:
+            for kube_cluster in self.kube_clusters:
+                kube_cluster_resources.append(
+                    KubeClusterResource(
+                        client_config=self.client_config,
+                        resource_config={
+                            'cluster_name': kube_cluster.cluster_name
+                        },
+                        logger=self.logger))
+            self._kube_cluster_resources = kube_cluster_resources
+        return self._kube_cluster_resources
+
+    @property
+    def service_parameters(self):
+        """ This is a list of raw service parameters.
+        """
+        service_parameter_list = []
+        for service_parameter in self.connection.service_parameter.list():
+            service_parameter_list.append(service_parameter)
+        return service_parameter_list
+
+    @property
+    def openstack_cluster_resource(self):
+        """ This is a list of the Openstack resource objects.
+        I.e. interfaces for storing properties in runtime, etc.
+        """
+        service_parameter_resources = []
+        if not self._service_parameter_resources:
+            for service_parameter in self.service_parameters:
+                if service_parameter.value != 'openstack':
+                    continue
+                service_parameter_resources.append(
+                    ServiceParameterResource(
+                        client_config=self.client_config,
+                        resource_config={
+                            'value': service_parameter.value
+                        },
+                        logger=self.logger))
+            self._service_parameter_resources = service_parameter_resources
+        return self._service_parameter_resources
+
 
 class HostResource(ConfigurationResource):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._host_resources = None
 
     def list(self):
         return self.connection.ihost.list()
@@ -213,7 +281,7 @@ class HostResource(ConfigurationResource):
 
     def to_dict(self):
         return {
-            self.resource.uuid: {
+            self.resource_id: {
                 'hostname': self.resource.hostname,
                 'personality': self.resource.personality,
                 'capabilities': self.resource.capabilities,
@@ -238,4 +306,50 @@ class ApplicationResource(ConfigurationResource):
             'app_version': self.resource.app_version,
             'manifest_name': self.resource.manifest_name,
             'manifest_file': self.resource.manifest_file,
+        }
+
+
+class KubeClusterResource(ConfigurationResource):
+
+    id_key = 'cluster_name'
+
+    def list(self):
+        return self.connection.kube_cluster.list()
+
+    def get(self):
+        return self.connection.kube_cluster.get(self.resource_id)
+
+    def to_dict(self):
+        return {
+            self.resource.cluster_name: {
+                'admin_user': self.resource.admin_user,
+                'admin_token': self.resource.admin_token,
+                'cluster_api_endpoint': self.resource.cluster_api_endpoint,
+                'admin_client_cert': self.resource.admin_client_cert,
+                'cluster_name': self.resource.cluster_name,
+                'cluster_ca_cert': self.resource.cluster_ca_cert,
+                'cluster_version': self.resource.cluster_version,
+                'admin_client_key': self.resource.admin_client_key
+            }
+        }
+
+
+class ServiceParameterResource(ConfigurationResource):
+
+    id_key = 'value'
+
+    def list(self):
+        return self.connection.service_parameter.list()
+
+    def get(self):
+        return self.connection.service_parameter.get(self.resource_id)
+
+    def to_dict(self):
+        return {
+            self.resource.value: {
+                'service': self.resource.service,
+                'section': self.resource.section,
+                'name': self.resource.name,
+                'value': self.resource.value,
+            }
         }

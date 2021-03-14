@@ -19,14 +19,16 @@ from cloudify.constants import NODE_INSTANCE
 from cloudify.exceptions import NonRecoverableError
 
 from . import StarlingXTestBase
-from ..resources.controller import poststart
+from ..resources.wrcp import poststart
 
 
 class StarlingXControllerTest(StarlingXTestBase):
 
     @patch('cloudify_starlingx_sdk.resources.configuration.get_client')
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
-    def test_poststart(self, _, __):
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    @patch('cloudify_starlingx.utils.get_deployment_label_by_name')
+    def test_poststart(self, _, __, ___, ____):
         ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
         ctx.node.properties['resource_config'] = {
             'uuid': 'foo',
