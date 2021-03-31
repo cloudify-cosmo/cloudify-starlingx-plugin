@@ -127,11 +127,11 @@ def assign_required_labels(ctx_instance, deployment_id):
         services.append('openstack')
     services = tuple(services)
 
-    labels['csys-location-name'] = config.get('Tlocation', 'TEMPVALUE')
-    labels['csys-location-lat'] = config.get('Tlatitude', 'TEMPVALUE')
-    labels['csys-location-long'] = config.get('Tlongitude', 'TEMPVALUE')
+    labels['csys-location-name'] = config.get('location')
+    labels['csys-location-lat'] = config.get('latitude')
+    labels['csys-location-long'] = config.get('longitude')
     if services:
-        labels['csys-wrcs-services'] = services
+        labels['csys-wrcp-services'] = services
 
     update_deployment_labels(deployment_id, labels)
 
