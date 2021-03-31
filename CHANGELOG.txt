@@ -3,3 +3,5 @@
  - Perform read/GET operation on resources in poststart operation.
  - Support subcloud depends on controller relationship.
  - Discover subcloud workflow
+0.0.2:
+ - Remove invalid label.
