@@ -5,3 +5,5 @@
  - Discover subcloud workflow
 0.0.2:
  - Remove invalid label.
+0.0.3:
+ - Correct longitude reporting.
