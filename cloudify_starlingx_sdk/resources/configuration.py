@@ -92,7 +92,7 @@ class SystemResource(ConfigurationResource):
             'system_mode': self.system_mode,
             'region_name': self.region_name,
             'latitude': getattr(self.resource, 'latitude', None),
-            'longitude': getattr(self.resource, 'latitude', None),
+            'longitude': getattr(self.resource, 'longitude', None),
             'distributed_cloud_role': self.distributed_cloud_role
         }
 
