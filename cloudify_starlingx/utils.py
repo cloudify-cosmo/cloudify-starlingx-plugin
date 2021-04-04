@@ -115,6 +115,15 @@ def update_openstack_props(ctx_instance, resources, client_config):
                                                     'os_password')))
 
 
+def assign_site(deployment_id, location):
+    site = get_site(deployment_id)
+    if not site:
+        return create_site(deployment_id, location)
+    elif not site.get('location'):
+        return update_site(deployment_id, location)
+    update_deployment_site(deployment_id, deployment_id)
+
+
 def assign_required_labels(ctx_instance, deployment_id):
 
     labels = get_deployment_labels(deployment_id)
@@ -172,6 +181,36 @@ def get_instances_of_nodes(node_id=None, node_type=None, deployment_id=None):
             node_type=node_type, deployment_id=deployment_id)
     else:
         raise NonRecoverableError('No node_id and no node_type provided.')
+
+
+@with_rest_client
+def get_site(site_name, rest_client):
+    try:
+        return rest_client.sites.get(site_name)
+    except CloudifyClientError:
+        return
+
+
+@with_rest_client
+def create_site(site_name, location, rest_client):
+    return rest_client.sites.create(site_name, location)
+
+
+@with_rest_client
+def update_site(site_name, location, rest_client):
+    return rest_client.sites.update(site_name, location)
+
+
+@with_rest_client
+def update_deployment_site(deployment_id, site_name, rest_client):
+    deployment = get_deployment(deployment_id)
+    if deployment.site_name == site_name:
+        return deployment
+    elif deployment.site_name:
+        return rest_client.deployments.set_site(
+            deployment_id, detach_site=True)
+    return rest_client.deployments.set_site(
+        deployment_id, site_name)
 
 
 @with_rest_client

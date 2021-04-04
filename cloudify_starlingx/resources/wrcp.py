@@ -20,6 +20,7 @@ from cloudify.exceptions import NonRecoverableError
 from ..constants import LABELS, DEFAULT_REGION
 from ..decorators import with_starlingx_resource
 from ..utils import (
+    assign_site,
     add_new_label,
     get_parent_wrcp_ip,
     update_prop_resource,
@@ -70,6 +71,7 @@ def poststart(resource, ctx):
                            resource.openstack_cluster_resource,
                            resource.client_config)
     assign_required_labels(ctx.instance, ctx.deployment.id)
+    assign_site(ctx.deployment.id, resource.location)
 
 
 def get_subcloud_resource(resource, deployment_id):

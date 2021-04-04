@@ -1,9 +1,11 @@
 0.0.1:
- - Support controller, app, and subcloud types.
- - Perform read/GET operation on resources in poststart operation.
- - Support subcloud depends on controller relationship.
- - Discover subcloud workflow
+- Support controller, app, and subcloud types.
+- Perform read/GET operation on resources in poststart operation.
+- Support subcloud depends on controller relationship.
+- Discover subcloud workflow
 0.0.2:
- - Remove invalid label.
+- Remove invalid label.
 0.0.3:
- - Correct longitude reporting.
+- Correct longitude reporting.
+0.0.4:
+- Add support for adding sites.
