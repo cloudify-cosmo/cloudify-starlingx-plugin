@@ -122,6 +122,19 @@ class SystemResource(ConfigurationResource):
         return self.value_from_config('system_mode')
 
     @property
+    def latitude(self):
+        return self.value_from_config('latitude')
+
+    @property
+    def longitude(self):
+        return self.value_from_config('longitude')
+
+    @property
+    def location(self):
+        return '{lat},{lon}'.format(
+            lat=self.latitude, lon=self.longitude)
+
+    @property
     def is_standalone_system(self):
         if self.value_from_config('distributed_cloud_role') in STANDALONE:
             return True

@@ -157,3 +157,61 @@ class StarlingXUtilsTest(StarlingXTestBase):
         my_dict = {'foo': 'bar'}
         assert utils.convert_list_to_dict(my_list) == my_dict
         assert utils.convert_dict_to_list(my_dict) == [my_dict]
+
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    def test_get_site(self, mock_client):
+        prop = 'bar'
+        utils.get_site(site_name=prop)
+        assert call().sites.get(prop) in mock_client.mock_calls
+
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    def test_create_site(self, mock_client):
+        prop = {
+            'site_name': 'foo',
+            'location': 'bar,baz'
+        }
+        utils.create_site(**prop)
+        assert call().sites.create(
+            'foo',
+            'bar,baz'
+        ) in mock_client.mock_calls
+
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    def test_update_site(self, mock_client):
+        prop = {
+            'site_name': 'foo',
+            'location': 'bar,baz'
+        }
+        utils.update_site(**prop)
+        assert call().sites.update(
+            'foo',
+            'bar,baz'
+        ) in mock_client.mock_calls
+
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    def test_update_deployment_site(self, mock_client):
+        prop = {
+            'deployment_id': 'foo',
+            'site_name': 'bar,baz'
+        }
+        utils.update_deployment_site(**prop)
+        assert call().deployments.get(
+            deployment_id='foo') in mock_client.mock_calls
+        assert call().deployments.set_site(
+            'foo',
+            detach_site=True
+        ) in mock_client.mock_calls
+
+    @patch('cloudify_starlingx.utils.get_rest_client')
+    def test_assign_site(self, mock_client):
+        prop = {
+            'deployment_id': 'foo',
+            'location': 'bar,baz'
+        }
+        utils.assign_site(**prop)
+        assert call().deployments.get(
+            deployment_id='foo') in mock_client.mock_calls
+        assert call().deployments.set_site(
+            'foo',
+            detach_site=True
+        ) in mock_client.mock_calls
