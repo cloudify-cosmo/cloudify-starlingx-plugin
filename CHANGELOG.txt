@@ -9,3 +9,5 @@
 - Correct longitude reporting.
 0.0.4:
 - Add support for adding sites.
+0.0.5:
+- Assign deployment to site.
