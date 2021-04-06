@@ -118,9 +118,9 @@ def update_openstack_props(ctx_instance, resources, client_config):
 def assign_site(deployment_id, location):
     site = get_site(deployment_id)
     if not site:
-        return create_site(deployment_id, location)
+        create_site(deployment_id, location)
     elif not site.get('location'):
-        return update_site(deployment_id, location)
+        update_site(deployment_id, location)
     update_deployment_site(deployment_id, deployment_id)
 
 
