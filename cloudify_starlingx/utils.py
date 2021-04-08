@@ -17,7 +17,7 @@ import sys
 from time import sleep
 from copy import deepcopy
 
-from cloudify import ctx as cctx
+from cloudify import ctx
 from cloudify.workflows import ctx as wtx
 from cloudify.manager import get_rest_client
 from cloudify.exceptions import NonRecoverableError
@@ -332,7 +332,7 @@ def get_parent_deployment(deployment_id, rest_client):
     deployment_id = get_deployment_label_by_name(
         'csys-obj-parent', deployment_id)
     if not deployment_id:
-        cctx.logger.warn(
+        ctx.logger.warn(
             'Unable to get parent deployment. '
             'No "csys-obj-parent" label set for deployment. '
             'Assuming manual subcloud enrollment. Set label manually.')
