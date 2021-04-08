@@ -11,3 +11,6 @@
 - Add support for adding sites.
 0.0.5:
 - Assign deployment to site.
+0.0.6:
+- Handle deployments with capital letters in the name.
+- Change inputs IP to URL.

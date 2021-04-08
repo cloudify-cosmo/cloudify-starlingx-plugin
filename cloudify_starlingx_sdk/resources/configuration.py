@@ -267,13 +267,13 @@ class SystemResource(ConfigurationResource):
         service_parameter_resources = []
         if not self._service_parameter_resources:
             for service_parameter in self.service_parameters:
-                if service_parameter.value != 'openstack':
+                if service_parameter.service != 'openstack':
                     continue
                 service_parameter_resources.append(
                     ServiceParameterResource(
                         client_config=self.client_config,
                         resource_config={
-                            'value': service_parameter.value
+                            'uuid': service_parameter.uuid
                         },
                         logger=self.logger))
             self._service_parameter_resources = service_parameter_resources
@@ -349,13 +349,16 @@ class KubeClusterResource(ConfigurationResource):
 
 class ServiceParameterResource(ConfigurationResource):
 
-    id_key = 'value'
+    id_key = 'uuid'
 
     def list(self):
         return self.connection.service_parameter.list()
 
     def get(self):
         return self.connection.service_parameter.get(self.resource_id)
+
+    def value(self):
+        return self.resource.value
 
     def to_dict(self):
         return {

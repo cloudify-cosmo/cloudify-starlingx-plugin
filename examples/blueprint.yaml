@@ -40,18 +40,13 @@ labels:
 
 inputs:
 
-#  Type: # Type
-#    type: string
-#    description: A user-defined label for the type of environment.
-#    default: '' # 'Wind-River-Cloud-Platform-System-Controller' # Change inside the plugin as well.
-#
-#  parent:
-#    type: string
-#    description: The ID of the Controller managing this subcloud in case this is a manual subcloud installation.
-#    default: 'NULL'
-
-  IP:
+  URL:
     type: string
+    description: >
+      The URL of the WRCP API endpoint. E.g. http://10.0.2.2:5000/v3.
+      If only an IP or a hostname is provided,
+      the plugin will add "http://" to the beginning of the URL,
+      and ":5000/v3" to the end of the URL.
 
   User-secret:
     type: string
@@ -68,7 +63,7 @@ inputs:
 dsl_definitions:
 
   client_config: &client_config
-    auth_url: { get_input: IP }
+    auth_url: { get_input: URL }
     username: { get_secret: { get_input: User-secret } }
     api_key: { get_secret: { get_input: Password-secret } }
     project_name: admin
@@ -88,7 +83,7 @@ capabilities:
 
   wrcp-ip:
     description: The external endpoint of the application.
-    value: { get_input: IP }
+    value: { get_input: URL }
 
   wrcp-user-secret:
     description: the secret representing the wrcp access username
