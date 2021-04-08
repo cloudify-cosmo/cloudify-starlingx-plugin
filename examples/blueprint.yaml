@@ -1,5 +1,12 @@
 tosca_definitions_version: cloudify_dsl_1_3
 
+description: >
+  This blueprint can be used to enroll both system controllers and subclouds.
+  To discover a system controller's subclouds, use this blueprint to enroll
+  the system controller, and then execute the discover_and_deploy workflow.
+  To manually enroll a subcloud, provide the URL endpoint of the subcloud,
+  and set region_name input to the name of the subcloud.
+
 imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
   - plugin:cloudify-starlingx-plugin
@@ -15,6 +22,11 @@ blueprint_labels:
     - wrcp
 
 labels:
+
+  # These values are used to identify sites and parent deployments.
+  # They will be filled automatically during installation of the blueprint.
+  # For manual subcloud enrollment, the values need to be filled manually
+  # in the UI.
 
   csys-obj-type:
     values:
@@ -50,14 +62,25 @@ inputs:
 
   User-secret:
     type: string
+    description: >
+      The name of the secret that contains the username,
+      which will be used to authenticate with StarlingX endpoint.
     default: starlingx_username
 
   Password-secret:
     type: string
+    description: >
+      The name of the secret that contains the password,
+      also known as api key,
+      which will be used to authenticate with StarlingX endpoint.
     default: starlingx_api_key
 
   region_name:
     type: string
+    description: >
+      The region that will be provided to starlingX API.
+      RegionOne is used for System Controllers.
+      Subclouds require the subcloud name to be provided.
     default: RegionOne
 
 dsl_definitions:
