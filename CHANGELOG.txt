@@ -11,3 +11,8 @@
 - Add support for adding sites.
 0.0.5:
 - Assign deployment to site.
+0.0.6:
+- RD-1988 - Change inputs IP to URL.
+- RD-1990 - Add descriptions to the inputs.
+- WDR-9 - Manaul subcloud enrollment failed.
+- WDR-10 - Openstack properties are not showing up.

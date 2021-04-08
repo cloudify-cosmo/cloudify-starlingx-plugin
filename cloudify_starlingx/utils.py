@@ -17,6 +17,7 @@ import sys
 from time import sleep
 from copy import deepcopy
 
+from cloudify import ctx
 from cloudify.workflows import ctx as wtx
 from cloudify.manager import get_rest_client
 from cloudify.exceptions import NonRecoverableError
@@ -79,10 +80,7 @@ def resolve_ctx(_ctx):
 def update_prop_resource(ctx_instance, resource, config_key=None):
     config_key = config_key or 'resource_config'
     resource_config = ctx_instance.runtime_properties.get(config_key, {})
-    # try:
     resource_config.update(resource.to_dict())
-    # except EndpointNotFound:
-    #     pass
     ctx_instance.runtime_properties[config_key] = resource_config
     ctx_instance.update()
 
@@ -148,6 +146,8 @@ def assign_required_labels(ctx_instance, deployment_id):
 def get_parent_wrcp_ip(deployment_id=None, deployment=None):
     if deployment_id and not deployment:
         deployment = get_parent_deployment(deployment_id)
+    if not deployment:
+        return
     return resolve_intrinsic_functions(
         deployment.capabilities['wrcp-ip']['value'], deployment_id)
 
@@ -331,6 +331,12 @@ def get_deployment_label_by_name(label_name, deployment_id):
 def get_parent_deployment(deployment_id, rest_client):
     deployment_id = get_deployment_label_by_name(
         'csys-obj-parent', deployment_id)
+    if not deployment_id:
+        ctx.logger.warn(
+            'Unable to get parent deployment. '
+            'No "csys-obj-parent" label set for deployment. '
+            'Assuming manual subcloud enrollment. Set label manually.')
+        return
     return rest_client.deployments.get(deployment_id)
 
 

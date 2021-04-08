@@ -158,7 +158,7 @@ def discover_and_deploy(node_id=None,
         # How do we get the system object for the subcloud?
         # system = get_system(ctx.get_node(subcloud_name))
         inputs = {
-            'IP': subcloud.get('oam_floating_ip'),
+            'URL': subcloud.get('oam_floating_ip'),
             'region_name': subcloud_name
         }
         labels = [{'csys-env-type': LABELS['types']['subcloud']},

@@ -51,6 +51,8 @@ class StarlingXResource(object):
         if not auth_url.startswith('http://') and not \
                 auth_url.startswith('https://'):
             auth_url = 'http://{u}'.format(u=auth_url)
+        if auth_url.endswith('/'):
+            auth_url.strip('/')
         if not auth_url.endswith(':5000/v3'):
             auth_url = '{u}:5000/v3'.format(u=auth_url)
         return auth_url
