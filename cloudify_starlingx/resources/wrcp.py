@@ -71,7 +71,7 @@ def poststart(resource, ctx):
                            resource.openstack_cluster_resource,
                            resource.client_config)
     assign_required_labels(ctx.instance, ctx.deployment.id)
-    assign_site(ctx.deployment.id, resource.location)
+    assign_site(ctx.instance, ctx.deployment.id, resource.location)
 
 
 def get_subcloud_resource(resource, deployment_id):

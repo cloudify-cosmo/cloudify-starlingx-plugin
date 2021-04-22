@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import sys
 from time import sleep
 from copy import deepcopy
@@ -113,19 +114,38 @@ def update_openstack_props(ctx_instance, resources, client_config):
                                                     'os_password')))
 
 
-def assign_site(deployment_id, location):
-    site = get_site(deployment_id)
+def assign_site(ctx_instance, deployment_id, location):
+    config = ctx_instance.runtime_properties.get('resource_config', {})
+    location_name = format_location_name(config.get('location', ''))
+    site = get_site(location_name)
     if not site:
-        create_site(deployment_id, location)
+        create_site(location_name, location)
     elif not site.get('location'):
-        update_site(deployment_id, location)
-    update_deployment_site(deployment_id, deployment_id)
+        update_site(location_name, location)
+    update_deployment_site(deployment_id, location_name)
+
+
+def format_location_name(location_name):
+    return re.sub('\\-+', '-', re.sub('[^0-9a-zA-Z]', '-', location_name))
+
+
+def get_subcloud_group_id(ctx_instance):
+    # There is really only one subcloud here,
+    # but it's nested in a dict with one item.
+    # I prefer to do it this way instead of trying KeyError. Just looks better
+    # IMO.
+    subclouds = ctx_instance.runtime_properties.get('subcloud')
+    if subclouds:
+        for subcloud in subclouds.values():
+            return subcloud.get('group_id')
+    return ''
 
 
 def assign_required_labels(ctx_instance, deployment_id):
 
     labels = get_deployment_labels(deployment_id)
     config = ctx_instance.runtime_properties.get('resource_config', {})
+    # group_id = get_subcloud_group_id(ctx.instance)
 
     services = []
     if ctx_instance.runtime_properties.get('k8s_ip'):
@@ -137,6 +157,7 @@ def assign_required_labels(ctx_instance, deployment_id):
     labels['csys-location-name'] = config.get('location')
     labels['csys-location-lat'] = config.get('latitude')
     labels['csys-location-long'] = config.get('longitude')
+    # labels['csys-wrcp-group-id'] = group_id
     if services:
         labels['csys-wrcp-services'] = services
 
@@ -356,13 +377,26 @@ def create_deployments(group_id,
                        labels,
                        rest_client):
 
-    for n, deployment_id in enumerate(deployment_ids):
-        create_deployment(inputs[n], labels[n], blueprint_id, deployment_id)
     rest_client.deployment_groups.put(
         group_id=group_id,
         blueprint_id=blueprint_id)
-    get_deployments_from_group(group_id)
-    rest_client.deployment_groups.add_deployments(group_id, deployment_ids)
+    rest_client.deployment_groups.add_deployments(
+        group_id,
+        new_deployments=[
+            {
+                'id': deployment_id,
+                'labels': labels[n],
+                'inputs': inputs[n]
+            } for n, deployment_id in enumerate(deployment_ids)]
+    )
+
+    # for n, deployment_id in enumerate(deployment_ids):
+    #     create_deployment(inputs[n], labels[n], blueprint_id, deployment_id)
+    # rest_client.deployment_groups.put(
+    #     group_id=group_id,
+    #     blueprint_id=blueprint_id)
+    # get_deployments_from_group(group_id)
+    # rest_client.deployment_groups.add_deployments(group_id, deployment_ids)
 
 
 @with_rest_client
