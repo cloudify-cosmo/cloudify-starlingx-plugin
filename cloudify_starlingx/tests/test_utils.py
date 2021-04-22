@@ -204,7 +204,9 @@ class StarlingXUtilsTest(StarlingXTestBase):
 
     @patch('cloudify_starlingx.utils.get_rest_client')
     def test_assign_site(self, mock_client):
+        ctx = self.get_mock_ctx()
         prop = {
+            'ctx_instance': ctx.instance,
             'deployment_id': 'foo',
             'location': 'bar,baz'
         }
@@ -215,3 +217,10 @@ class StarlingXUtilsTest(StarlingXTestBase):
             'foo',
             detach_site=True
         ) in mock_client.mock_calls
+
+    def test_format_location(self):
+        location_name = 'mcdonalds,  south march, _ on'
+        self.assertEqual(
+            utils.format_location_name(location_name),
+            'mcdonalds-south-march-on')
+

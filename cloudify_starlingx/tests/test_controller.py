@@ -28,7 +28,8 @@ class StarlingXControllerTest(StarlingXTestBase):
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
     @patch('cloudify_starlingx.utils.get_rest_client')
     @patch('cloudify_starlingx.utils.get_deployment_label_by_name')
-    def test_poststart(self, _, __, ___, ____):
+    @patch('cloudify_starlingx.utils.format_location_name')
+    def test_poststart(self, *_):
         ctx = self.get_mock_ctx(reltype=NODE_INSTANCE)
         ctx.node.properties['resource_config'] = {
             'uuid': 'foo',
