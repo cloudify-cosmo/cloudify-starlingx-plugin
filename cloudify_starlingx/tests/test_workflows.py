@@ -83,7 +83,7 @@ class StarlingXWorkflowTest(StarlingXTestBase):
         current_ctx.set(ctx)
         with patch('cloudify_starlingx.utils.wtx', side_effect=ctx):
             discover.discover_subclouds(ctx=ctx)
-        assert mock_rest_client.nodes.list.called
+        assert mock_rest_client.nodes.get.called
         assert mock_rest_client.node_instances.list.called
 
     @patch('cloudify_starlingx.utils.get_rest_client')
