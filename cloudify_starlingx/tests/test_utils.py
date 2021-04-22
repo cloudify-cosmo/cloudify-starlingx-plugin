@@ -223,4 +223,3 @@ class StarlingXUtilsTest(StarlingXTestBase):
         self.assertEqual(
             utils.format_location_name(location_name),
             'mcdonalds-south-march-on')
-

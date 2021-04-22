@@ -130,6 +130,10 @@ def format_location_name(location_name):
 
 
 def get_subcloud_group_id(ctx_instance):
+    # There is really only one subcloud here,
+    # but it's nested in a dict with one item.
+    # I prefer to do it this way instead of trying KeyError. Just looks better
+    # IMO.
     subclouds = ctx_instance.runtime_properties.get('subcloud')
     if subclouds:
         for subcloud in subclouds.values():
