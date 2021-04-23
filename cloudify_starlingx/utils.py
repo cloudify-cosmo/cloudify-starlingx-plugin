@@ -244,15 +244,17 @@ def get_node_instances_by_type(node_type, deployment_id, rest_client):
     :return list: a list of node instances.
     """
     node_instances = []
-    for node in rest_client.nodes.list(deployment_id=deployment_id):
+    for ni in rest_client.node_instances.list(deployment_id=deployment_id,
+                                              state='started',
+                                              _includes=['id',
+                                                         'state',
+                                                         'version',
+                                                         'runtime_properties',
+                                                         'node_id']):
+        node = rest_client.nodes.get(
+            node_id=ni.node_id, deployment_id=deployment_id)
         if node_type in node.type_hierarchy:
-            for node_instance in rest_client.node_instances.list(
-                    node_id=node.id):
-                if node_instance.deployment_id != deployment_id:
-                    continue
-                if node_instance.state != 'started':
-                    continue
-                node_instances.append(node_instance)
+            node_instances.append(ni)
     return node_instances
 
 

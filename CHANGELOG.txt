@@ -19,3 +19,5 @@
 0.0.7:
 - RD-2072 - Set site name as location
 - RD-2098 - Use deployments group API directly
+0.0.8:
+- WDR-12 Improve Node Instance Lookup

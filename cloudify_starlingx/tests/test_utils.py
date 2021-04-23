@@ -87,14 +87,18 @@ class StarlingXUtilsTest(StarlingXTestBase):
         utils.get_instances_of_nodes('foo')
         mock_ctx.get_node.assert_called_with('foo')
         utils.get_instances_of_nodes(node_type='foo', deployment_id='bar')
-        assert call().nodes.list(deployment_id='bar') in mock_client.mock_calls
+        assert call().node_instances.list(
+            _includes=['version', 'runtime_properties', 'node_id'],
+            deployment_id='bar', state='started') in mock_client.mock_calls
 
     @patch('cloudify_starlingx.utils.get_rest_client')
     def test_get_node_instances_by_type(self, mock_client):
         result = utils.get_node_instances_by_type(
             node_type='foo', deployment_id='bar')
-        assert call().nodes.list(deployment_id='bar') in mock_client.mock_calls
         self.assertIsInstance(result, list)
+        assert call().node_instances.list(
+            _includes=['version', 'runtime_properties', 'node_id'],
+            deployment_id='bar', state='started') in mock_client.mock_calls
 
     @patch('cloudify_starlingx.utils.get_rest_client')
     def update_runtime_properties(self, mock_client):
