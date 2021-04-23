@@ -246,7 +246,9 @@ def get_node_instances_by_type(node_type, deployment_id, rest_client):
     node_instances = []
     for ni in rest_client.node_instances.list(deployment_id=deployment_id,
                                               state='started',
-                                              _includes=['version',
+                                              _includes=['id',
+                                                         'state',
+                                                         'version',
                                                          'runtime_properties',
                                                          'node_id']):
         node = rest_client.nodes.get(
