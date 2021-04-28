@@ -392,14 +392,6 @@ def create_deployments(group_id,
             } for n, deployment_id in enumerate(deployment_ids)]
     )
 
-    # for n, deployment_id in enumerate(deployment_ids):
-    #     create_deployment(inputs[n], labels[n], blueprint_id, deployment_id)
-    # rest_client.deployment_groups.put(
-    #     group_id=group_id,
-    #     blueprint_id=blueprint_id)
-    # get_deployments_from_group(group_id)
-    # rest_client.deployment_groups.add_deployments(group_id, deployment_ids)
-
 
 @with_rest_client
 def get_attribute(node_id, runtime_property, deployment_id, rest_client):

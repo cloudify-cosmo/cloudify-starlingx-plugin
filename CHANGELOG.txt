@@ -21,3 +21,5 @@
 - RD-2098 - Use deployments group API directly
 0.0.8:
 - WDR-12 Improve Node Instance Lookup
+0.0.9:
+- RD-2097 Add csys-wrcp-group-id label.
