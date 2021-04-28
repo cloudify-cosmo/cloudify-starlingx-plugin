@@ -23,3 +23,5 @@
 - WDR-12 Improve Node Instance Lookup
 0.0.9:
 - RD-2097 Add csys-wrcp-group-id label.
+0.0.10:
+- WDR-23 Group ID Bug
