@@ -25,3 +25,7 @@
 - RD-2097 Add csys-wrcp-group-id label.
 0.0.10:
 - WDR-23 Group ID Bug
+0.0.11:
+- RD-2167 Update CGTS Client
+- RD-2152 Use Display Name
+
