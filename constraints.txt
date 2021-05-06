@@ -1,3 +1,4 @@
 -e git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client
 -e git+https://opendev.org/starlingx/config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
 cryptography==3.3.2
+python-keystoneclient==3.21.0

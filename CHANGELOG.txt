@@ -28,4 +28,5 @@
 0.0.11:
 - RD-2167 Update CGTS Client
 - RD-2152 Use Display Name
+- Change default value for project domain name.
 
