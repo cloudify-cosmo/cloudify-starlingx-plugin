@@ -91,8 +91,7 @@ dsl_definitions:
     api_key: { get_secret: { get_input: Password-secret } }
     project_name: admin
     user_domain_name: Default
-    project_domain_name: default
-    project_domain_id: default
+    project_domain_name: Default
     region_name: { get_input: region_name }
 
 node_templates:

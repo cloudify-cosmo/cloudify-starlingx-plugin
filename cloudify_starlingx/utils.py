@@ -386,7 +386,7 @@ def create_deployments(group_id,
         group_id,
         new_deployments=[
             {
-                'id': deployment_id,
+                'display_name': deployment_id,
                 'labels': labels[n],
                 'inputs': inputs[n]
             } for n, deployment_id in enumerate(deployment_ids)]
