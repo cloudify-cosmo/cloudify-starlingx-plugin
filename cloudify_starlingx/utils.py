@@ -129,7 +129,7 @@ def format_location_name(location_name):
     return re.sub('\\-+', '-', re.sub('[^0-9a-zA-Z]', '-', location_name))
 
 
-def get_subcloud_group_id(ctx_instance):
+def get_subcloud_group_id_and_name(ctx_instance):
     # There is really only one subcloud here,
     # but it's nested in a dict with one item.
     # I prefer to do it this way instead of trying KeyError. Just looks better
@@ -137,15 +137,16 @@ def get_subcloud_group_id(ctx_instance):
     subclouds = ctx_instance.runtime_properties.get('subcloud')
     if subclouds:
         for subcloud in subclouds.values():
-            return subcloud.get('group_id')
-    return ''
+            return subcloud.get('group_id', 'null'),\
+                   subcloud.get('group_name', 'null')
+    return ('null', 'null')
 
 
 def assign_required_labels(ctx_instance, deployment_id):
 
     labels = get_deployment_labels(deployment_id)
     config = ctx_instance.runtime_properties.get('resource_config', {})
-    # group_id = get_subcloud_group_id(ctx.instance)
+    group_id, group_name = get_subcloud_group_id_and_name(ctx.instance)
 
     services = []
     if ctx_instance.runtime_properties.get('k8s_ip'):
@@ -154,13 +155,16 @@ def assign_required_labels(ctx_instance, deployment_id):
         services.append('openstack')
     services = tuple(services)
 
-    labels['csys-location-name'] = config.get('location')
-    labels['csys-location-lat'] = config.get('latitude')
-    labels['csys-location-long'] = config.get('longitude')
-    # labels['csys-wrcp-group-id'] = group_id
+    labels['csys-location-name'] = config.get('location', 'null')
+    labels['csys-location-lat'] = config.get('latitude', 'null')
+    labels['csys-location-long'] = config.get('longitude', 'null')
+    if group_id == 'null':
+        labels['csys-wrcp-group-id'] = str(group_id)
+    if group_name == 'null':
+        labels['wrcp-group-name'] = group_name
     if services:
         labels['csys-wrcp-services'] = services
-
+    ctx.logger.info(labels)
     update_deployment_labels(deployment_id, labels)
 
 
@@ -366,6 +370,7 @@ def get_parent_deployment(deployment_id, rest_client):
 @with_rest_client
 def update_deployment_labels(deployment_id, labels, rest_client):
     labels = convert_dict_to_list(labels)
+    ctx.logger.info(labels)
     rest_client.deployments.update_labels(
         deployment_id,
         labels=labels)
@@ -386,7 +391,7 @@ def create_deployments(group_id,
         group_id,
         new_deployments=[
             {
-                'id': deployment_id,
+                'display_name': deployment_id,
                 'labels': labels[n],
                 'inputs': inputs[n]
             } for n, deployment_id in enumerate(deployment_ids)]

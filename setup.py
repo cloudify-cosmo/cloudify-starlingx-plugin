@@ -43,8 +43,15 @@ setup(
     license="LICENSE",
     description="Represent StarlingX Workloads in Cloudify.",
     install_requires=[
+        'httplib2',
         'distributedcloud-client',
         'cgtsclient',
+        # 'distributedcloud-client @ '
+        # 'git+https://opendev.org/starlingx/distcloud-client.git'
+        # '@master#subdirectory=distributedcloud-client',
+        # 'cgtsclient @ '
+        # 'git+https://opendev.org/starlingx/config.git@master'
+        # '@master#subdirectory=sysinv/cgts-client/cgts-client',
         'httplib2',
         'cloudify-common',
         'babel',  # Required by distributedcloud-client
