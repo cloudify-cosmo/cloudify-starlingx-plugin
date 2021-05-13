@@ -92,6 +92,23 @@ class SubcloudResource(DistributedCloudResource):
     def to_dict(self):
         return self.get_subcloud_as_dict(self.resource)
 
+    def get_subcloud_group(self, group_id):
+        try:
+            result = \
+                self.connection.subcloud_group_manager.subcloud_group_detail(
+                    group_id)
+        except EndpointNotFound:
+            return None
+        # I am not sure why they return a list here.
+        if len(result) == 1:
+            return result[0]
+        return result
+
+    def get_subcloud_group_name(self, group_id):
+        subcloud_group = self.get_subcloud_group(group_id)
+        if subcloud_group:
+            return subcloud_group.name
+
     def get_subcloud_as_dict(self, resource):
         return {
             str(resource.subcloud_id): {
@@ -100,6 +117,7 @@ class SubcloudResource(DistributedCloudResource):
                 'description': resource.description,
                 'location': resource.location,
                 'group_id': resource.group_id,
+                'group_name': self.get_subcloud_group_name(resource.group_id),
                 'oam_floating_ip': self.get_oam_floating_ip(resource.name),
                 'management_state': resource.management_state
             }
