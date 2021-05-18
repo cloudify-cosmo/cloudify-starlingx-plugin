@@ -30,3 +30,6 @@
 - RD-2152 Use Display Name
 - Change default value for project domain name.
 - WDR-32 None Location
+0.0.12:
+- WDR-33 IPv6
+-

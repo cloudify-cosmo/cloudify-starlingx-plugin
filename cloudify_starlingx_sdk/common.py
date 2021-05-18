@@ -15,6 +15,7 @@
 
 
 from copy import deepcopy
+from urllib.parse import urlparse, urlunparse
 
 
 class InvalidINSecureValue(Exception):
@@ -48,14 +49,40 @@ class StarlingXResource(object):
         return self.client_config.get('auth_url')
 
     def cleanup_auth_url(self, auth_url):
-        if not auth_url.startswith('http://') and not \
-                auth_url.startswith('https://'):
-            auth_url = 'http://{u}'.format(u=auth_url)
-        if auth_url.endswith('/'):
-            auth_url.strip('/')
-        if not auth_url.endswith(':5000/v3'):
-            auth_url = '{u}:5000/v3'.format(u=auth_url)
-        return auth_url
+        """ There are a few particular variations to this URL.
+
+        :param auth_url:
+        :return:
+        """
+        # http or https, a hostname, or IPv4/IPv6 IP, v3 or v2.0
+        scheme, netloc, path, _, __, ___ = urlparse(auth_url)
+
+        # Somehow, urlparse read netloc into the patch
+        if path and not netloc:
+            netloc = path
+            if '/v3' in netloc:
+                netloc.replace('/v3', '')
+            path = ''
+            if '/v2.0' in netloc:
+                netloc.replace('/v2.0', '')
+                path = 'v2.0'
+
+        # If not path default to v3.
+        if not path:
+            path = 'v3'
+        # Verify that we have the correct port.
+        if netloc.endswith(':25000'):
+            pass
+        elif not netloc.endswith(':5000'):
+            netloc = netloc + ':5000'
+
+        if not scheme:
+            scheme = 'https'
+        elif scheme not in ['http', 'https']:
+            netloc = scheme + ':' + netloc
+            scheme = 'https'
+
+        return urlunparse((scheme, netloc, path, '', '', ''))
 
     @staticmethod
     def cleanup_config(config):
