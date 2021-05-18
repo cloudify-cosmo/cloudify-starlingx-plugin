@@ -13,9 +13,74 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from re import search
 from copy import deepcopy
+from ipaddress import ip_address, IPv4Address
 from urllib.parse import urlparse, urlunparse
+
+
+def is_ipv4(ip):
+    return True if type(ip_address(ip)) is IPv4Address else False
+
+
+def cleanup_netloc(netloc):
+    if netloc.endswith(':25000'):
+        result = search('(.*):25000', netloc)
+        ip = result.group(1)
+        port = '25000'
+    elif netloc.endswith(':5000'):
+        result = search('(.*):5000', netloc)
+        ip = result.group(1)
+        port = '5000'
+    else:
+        return netloc
+
+    try:
+        if is_ipv4(ip):
+            return netloc
+        return '[{ip}]:{port}'.format(ip=ip, port=port)
+    except ValueError:
+        return netloc
+
+
+def cleanup_auth_url(auth_url):
+    """ There are a few particular variations to this URL.
+
+    :param auth_url:
+    :return:
+    """
+    # http or https, a hostname, or IPv4/IPv6 IP, v3 or v2.0
+    scheme, netloc, path, _, __, ___ = urlparse(auth_url)
+
+    # Sometimes, urlparse read netloc into the path
+    if path and not netloc:
+        netloc = path
+        if '/v3' in netloc:
+            netloc.replace('/v3', '')
+        path = ''
+        if '/v2.0' in netloc:
+            netloc.replace('/v2.0', '')
+            path = 'v2.0'
+
+    # If not path default to v3.
+    if not path:
+        path = 'v3'
+    # Verify that we have the correct port.
+    if netloc.endswith(':25000'):
+        pass
+    elif not netloc.endswith(':5000'):
+        netloc = netloc + ':5000'
+
+    # Make sure that we have a scheme
+    if not scheme:
+        scheme = 'https'
+    elif scheme not in ['http', 'https']:
+        netloc = scheme + ':' + netloc
+        scheme = 'https'
+
+    netloc = cleanup_netloc(netloc)
+
+    return urlunparse((scheme, netloc, path, '', '', ''))
 
 
 class InvalidINSecureValue(Exception):
@@ -48,43 +113,6 @@ class StarlingXResource(object):
     def auth_url(self):
         return self.client_config.get('auth_url')
 
-    def cleanup_auth_url(self, auth_url):
-        """ There are a few particular variations to this URL.
-
-        :param auth_url:
-        :return:
-        """
-        # http or https, a hostname, or IPv4/IPv6 IP, v3 or v2.0
-        scheme, netloc, path, _, __, ___ = urlparse(auth_url)
-
-        # Sometimes, urlparse read netloc into the path
-        if path and not netloc:
-            netloc = path
-            if '/v3' in netloc:
-                netloc.replace('/v3', '')
-            path = ''
-            if '/v2.0' in netloc:
-                netloc.replace('/v2.0', '')
-                path = 'v2.0'
-
-        # If not path default to v3.
-        if not path:
-            path = 'v3'
-        # Verify that we have the correct port.
-        if netloc.endswith(':25000'):
-            pass
-        elif not netloc.endswith(':5000'):
-            netloc = netloc + ':5000'
-
-        # Make sure that we have a scheme
-        if not scheme:
-            scheme = 'https'
-        elif scheme not in ['http', 'https']:
-            netloc = scheme + ':' + netloc
-            scheme = 'https'
-
-        return urlunparse((scheme, netloc, path, '', '', ''))
-
     @staticmethod
     def cleanup_config(config):
         return deepcopy(config)
@@ -98,10 +126,11 @@ class StarlingXResource(object):
             if key not in config:
                 continue
             # Make sure that we are sending a useful URL.
-            config[key] = self.cleanup_auth_url(config[key])
+            config[key] = cleanup_auth_url(config[key])
             # Check that https is used appropriately.
             if not (config.get('insecure', False) or
                     'cacert' in config or
+                    'ca_file' in config or
                     'os_cacert' in config) and \
                     'https' in config[key]:
                 config[key] = config[key].replace('https', 'http')

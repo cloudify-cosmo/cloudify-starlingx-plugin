@@ -93,6 +93,8 @@ dsl_definitions:
     user_domain_name: Default
     project_domain_name: Default
     region_name: { get_input: region_name }
+    # cacert: { get_secret: starlingx_cacert }
+    insecure: true
 
 node_templates:
 

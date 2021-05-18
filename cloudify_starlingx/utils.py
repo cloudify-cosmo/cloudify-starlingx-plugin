@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import re
 import sys
 from tempfile import mkstemp
@@ -163,9 +162,9 @@ def assign_required_labels(ctx_instance, deployment_id):
         services.append('openstack')
     services = tuple(services)
 
-    labels['csys-location-name'] = config.get('location', 'null')
-    labels['csys-location-lat'] = config.get('latitude', 'null')
-    labels['csys-location-long'] = config.get('longitude', 'null')
+    labels['csys-location-name'] = str(config.get('location'))
+    labels['csys-location-lat'] = str(config.get('latitude'))
+    labels['csys-location-long'] = str(config.get('longitude'))
     if group_id != 'null':
         labels['wrcp-group-id'] = str(group_id)
     if group_name != 'null':
@@ -572,5 +571,6 @@ def get_system(controller_node):
 
 def cacert_as_file(cacert):
     new_file, filename = mkstemp()
-    os.write(new_file, cacert)
+    with open(filename, 'w') as outfile:
+        outfile.write(cacert)
     return new_file, filename
