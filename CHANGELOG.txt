@@ -32,4 +32,4 @@
 - WDR-32 None Location
 0.0.12:
 - WDR-33 IPv6
--
+- WDR-32 bug do not create site when location empty.

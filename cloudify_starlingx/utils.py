@@ -117,6 +117,12 @@ def update_openstack_props(ctx_instance, resources, client_config):
 def assign_site(ctx_instance, deployment_id, location):
     config = ctx_instance.runtime_properties.get('resource_config', {})
     location_name = format_location_name(config.get('location', ''))
+    if not location_name:
+        ctx.logger.error('No location name provided. Not creating site.')
+        return
+    if not location:
+        ctx.logger.error('No location provided. Not creating site.')
+        return
     site = get_site(location_name)
     if not site:
         create_site(location_name, location)
