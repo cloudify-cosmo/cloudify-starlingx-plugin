@@ -162,7 +162,7 @@ def discover_and_deploy(node_id=None,
             'region_name': subcloud_name
         }
         labels = [{'csys-env-type': LABELS['types']['subcloud']},
-                  {'csys-wrcp-group-id': str(subcloud.get('group_id'))},
+                  {'wrcp-group-id': str(subcloud.get('group_id'))},
                   {'csys-obj-parent': ctx.deployment.id}]
         deployment_ids_list.append(_deployment_id)
         inputs_list.append(inputs)

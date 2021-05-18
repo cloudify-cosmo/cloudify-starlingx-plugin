@@ -165,7 +165,7 @@ def assign_required_labels(ctx_instance, deployment_id):
     labels['csys-location-lat'] = config.get('latitude', 'null')
     labels['csys-location-long'] = config.get('longitude', 'null')
     if group_id == 'null':
-        labels['csys-wrcp-group-id'] = str(group_id)
+        labels['wrcp-group-id'] = str(group_id)
     if group_name == 'null':
         labels['wrcp-group-name'] = group_name
     if services:
