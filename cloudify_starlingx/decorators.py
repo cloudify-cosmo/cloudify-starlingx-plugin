@@ -14,6 +14,7 @@
 # limitations under the License.
 
 # Standard Imports
+import os
 import sys
 
 # Third party imports
@@ -21,7 +22,7 @@ from cloudify import ctx as CloudifyContext
 from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 
-from .utils import resolve_ctx
+from .utils import resolve_ctx, cacert_as_file
 
 
 def with_starlingx_resource(class_decl):
@@ -41,6 +42,14 @@ def with_starlingx_resource(class_decl):
             ctx_node = resolve_ctx(ctx)
             client_config = ctx_node.node.properties.get('client_config')
             resource_config = ctx_node.node.properties.get('resource_config')
+            if 'cacert' in client_config:
+                cafile, client_config['cacert'] = \
+                    cacert_as_file(client_config['cacert'])
+            elif 'os_cacert' in client_config:
+                cafile, client_config['os_cacert'] = cacert_as_file(
+                    client_config['os_cacert'])
+            else:
+                cafile = None
             try:
                 resource = class_decl(
                     client_config=client_config,
@@ -57,5 +66,9 @@ def with_starlingx_resource(class_decl):
                     'Failure while trying to run operation:'
                     '{0}: {1}'.format(ctx.operation.name, message),
                     causes=[exception_to_error_cause(errors, tb)])
+            finally:
+                if cafile:
+                    os.close(cafile)
+                    os.remove(cafile)
         return wrapper_inner
     return wrapper_outer

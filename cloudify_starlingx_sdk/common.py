@@ -15,6 +15,7 @@
 
 
 from copy import deepcopy
+from urllib.parse import urlparse, urlunparse
 
 
 class InvalidINSecureValue(Exception):
@@ -48,14 +49,41 @@ class StarlingXResource(object):
         return self.client_config.get('auth_url')
 
     def cleanup_auth_url(self, auth_url):
-        if not auth_url.startswith('http://') and not \
-                auth_url.startswith('https://'):
-            auth_url = 'http://{u}'.format(u=auth_url)
-        if auth_url.endswith('/'):
-            auth_url.strip('/')
-        if not auth_url.endswith(':5000/v3'):
-            auth_url = '{u}:5000/v3'.format(u=auth_url)
-        return auth_url
+        """ There are a few particular variations to this URL.
+
+        :param auth_url:
+        :return:
+        """
+        # http or https, a hostname, or IPv4/IPv6 IP, v3 or v2.0
+        scheme, netloc, path, _, __, ___ = urlparse(auth_url)
+
+        # Sometimes, urlparse read netloc into the path
+        if path and not netloc:
+            netloc = path
+            if '/v3' in netloc:
+                netloc.replace('/v3', '')
+            path = ''
+            if '/v2.0' in netloc:
+                netloc.replace('/v2.0', '')
+                path = 'v2.0'
+
+        # If not path default to v3.
+        if not path:
+            path = 'v3'
+        # Verify that we have the correct port.
+        if netloc.endswith(':25000'):
+            pass
+        elif not netloc.endswith(':5000'):
+            netloc = netloc + ':5000'
+
+        # Make sure that we have a scheme
+        if not scheme:
+            scheme = 'https'
+        elif scheme not in ['http', 'https']:
+            netloc = scheme + ':' + netloc
+            scheme = 'https'
+
+        return urlunparse((scheme, netloc, path, '', '', ''))
 
     @staticmethod
     def cleanup_config(config):
@@ -67,8 +95,16 @@ class StarlingXResource(object):
         os_kwargs = config.pop('os_kwargs', {})
         config.update(os_kwargs)
         for key in ['os_auth_url', 'auth_url']:
-            if key in config:
-                config[key] = self.cleanup_auth_url(config[key])
+            if key not in config:
+                continue
+            # Make sure that we are sending a useful URL.
+            config[key] = self.cleanup_auth_url(config[key])
+            # Check that https is used appropriately.
+            if not (config.get('insecure', False) or
+                    'cacert' in config or
+                    'os_cacert' in config) and \
+                    'https' in config[key]:
+                config[key] = config[key].replace('https', 'http')
         return self.cleanup_config(config)
 
     def list(self):
