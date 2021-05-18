@@ -57,7 +57,7 @@ class StarlingXResource(object):
         # http or https, a hostname, or IPv4/IPv6 IP, v3 or v2.0
         scheme, netloc, path, _, __, ___ = urlparse(auth_url)
 
-        # Somehow, urlparse read netloc into the patch
+        # Sometimes, urlparse read netloc into the path
         if path and not netloc:
             netloc = path
             if '/v3' in netloc:
@@ -76,6 +76,7 @@ class StarlingXResource(object):
         elif not netloc.endswith(':5000'):
             netloc = netloc + ':5000'
 
+        # Make sure that we have a scheme
         if not scheme:
             scheme = 'https'
         elif scheme not in ['http', 'https']:
@@ -94,8 +95,16 @@ class StarlingXResource(object):
         os_kwargs = config.pop('os_kwargs', {})
         config.update(os_kwargs)
         for key in ['os_auth_url', 'auth_url']:
-            if key in config:
-                config[key] = self.cleanup_auth_url(config[key])
+            if key not in config:
+                continue
+            # Make sure that we are sending a useful URL.
+            config[key] = self.cleanup_auth_url(config[key])
+            # Check that https is used appropriately.
+            if not (config.get('insecure', False) or
+                    'cacert' in config or
+                    'os_cacert' in config) and \
+                    'https' in config[key]:
+                config[key] = config[key].replace('https', 'http')
         return self.cleanup_config(config)
 
     def list(self):

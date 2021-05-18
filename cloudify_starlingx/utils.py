@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import re
 import sys
+from tempfile import mkstemp
 from time import sleep
 from copy import deepcopy
 
@@ -164,9 +166,9 @@ def assign_required_labels(ctx_instance, deployment_id):
     labels['csys-location-name'] = config.get('location', 'null')
     labels['csys-location-lat'] = config.get('latitude', 'null')
     labels['csys-location-long'] = config.get('longitude', 'null')
-    if group_id == 'null':
+    if group_id != 'null':
         labels['wrcp-group-id'] = str(group_id)
-    if group_name == 'null':
+    if group_name != 'null':
         labels['wrcp-group-name'] = group_name
     if services:
         labels['csys-wrcp-services'] = services
@@ -566,3 +568,9 @@ def get_system(controller_node):
                 'Failure while trying to discover subclouds:'
                 ' {0}'.format(message))
         return
+
+
+def cacert_as_file(cacert):
+    new_file, filename = mkstemp()
+    os.write(new_file, cacert)
+    return new_file, filename
