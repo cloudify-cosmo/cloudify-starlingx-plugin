@@ -35,3 +35,5 @@
 - WDR-32 bug do not create site when location empty.
 - WDR-27 change csys group name and id to wrcp with no csys.
 - WDR-34 dump cacert to file for duration of op if not already a file.
+0.0.13:
+- WDR-33 Bugs

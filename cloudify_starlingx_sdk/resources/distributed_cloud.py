@@ -29,6 +29,8 @@ class DistributedCloudResource(StarlingXResource):
         for key, val in list(creds.items()):
             if key.startswith('os_'):
                 creds[key.split('os_')[1]] = creds.pop(key)
+            if 'ca_file' in creds:
+                creds['cacert'] = creds.pop('ca_file')
             if 'password' in creds:
                 creds['api_key'] = creds.pop('password')
         if 'api_version' in creds:

@@ -43,13 +43,16 @@ def with_starlingx_resource(class_decl):
             client_config = ctx_node.node.properties.get('client_config')
             resource_config = ctx_node.node.properties.get('resource_config')
             if 'cacert' in client_config:
-                cafile, client_config['cacert'] = \
+                cafile, cafilename = \
                     cacert_as_file(client_config['cacert'])
+                client_config['cacert'] = cafilename
             elif 'os_cacert' in client_config:
-                cafile, client_config['os_cacert'] = cacert_as_file(
+                cafile, cafilename = cacert_as_file(
                     client_config['os_cacert'])
+                client_config['os_cacert'] = cafilename
             else:
                 cafile = None
+                cafilename = None
             try:
                 resource = class_decl(
                     client_config=client_config,
@@ -67,8 +70,8 @@ def with_starlingx_resource(class_decl):
                     '{0}: {1}'.format(ctx.operation.name, message),
                     causes=[exception_to_error_cause(errors, tb)])
             finally:
-                if cafile:
+                if cafile and cafilename:
                     os.close(cafile)
-                    os.remove(cafile)
+                    os.remove(cafilename)
         return wrapper_inner
     return wrapper_outer
