@@ -75,6 +75,18 @@ inputs:
       which will be used to authenticate with StarlingX endpoint.
     default: starlingx_api_key
 
+  CA-secret:
+    type: string
+    description: >
+      The contents of the CA Certificate.
+    default: 'starlingx_cacert'
+
+  insecure:
+    type: boolean
+    description: >
+      True if to skip SSL verification.
+    default: false
+
   region_name:
     type: string
     description: >
@@ -93,8 +105,8 @@ dsl_definitions:
     user_domain_name: Default
     project_domain_name: Default
     region_name: { get_input: region_name }
-    # cacert: { get_secret: starlingx_cacert }
-    insecure: true
+    cacert: { get_secret: { get_input: CA-secret } }
+    insecure: {  get_input: insecure }
 
 node_templates:
 

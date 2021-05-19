@@ -541,6 +541,27 @@ def get_controller_node_instance(node_instance_id=None,
     return controllers[0]
 
 
+def handle_cert_in_config(client_config):
+    if 'cacert' in client_config:
+        cacert = client_config.get('cacert')
+        if not cacert:
+            return
+        cafile, cafilename = \
+            cacert_as_file(cacert)
+        client_config['cacert'] = cafilename
+    elif 'os_cacert' in client_config:
+        cacert = client_config.get('os_cacert')
+        if not cacert:
+            return
+        cafile, cafilename = \
+            cacert_as_file(cacert)
+        client_config['os_cacert'] = cafilename
+    else:
+        cafile = None
+        cafilename = None
+    return cafile, cafilename
+
+
 def get_system(controller_node):
     """ Get a system object by cloudify node.
 
@@ -549,8 +570,9 @@ def get_system(controller_node):
     """
     client_config = desecretize_client_config(
         controller_node.properties.get('client_config', {}))
+    cafile, cafilename = handle_cert_in_config(client_config)
     try:
-        return SystemResource(
+        return cafile, cafilename, SystemResource(
             client_config=client_config,
             resource_config=controller_node.properties.get('resource_config'),
             logger=wtx.logger
@@ -566,7 +588,6 @@ def get_system(controller_node):
             raise NonRecoverableError(
                 'Failure while trying to discover subclouds:'
                 ' {0}'.format(message))
-        return
 
 
 def cacert_as_file(cacert):

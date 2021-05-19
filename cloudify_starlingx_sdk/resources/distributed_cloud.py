@@ -13,11 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from copy import deepcopy
 
 from ..common import StarlingXResource
 
+from keystoneauth1 import session
+from keystoneauth1.identity import v3
+
 from dcmanagerclient.api import client
+from dcmanagerclient.api.v1 import client as client_v1
 from keystoneauth1.exceptions.catalog import EndpointNotFound
 
 
@@ -40,7 +45,26 @@ class DistributedCloudResource(StarlingXResource):
     @property
     def connection(self):
         if not self._connection:
-            self._connection = client.client(**self.client_config)
+            cacert = self.client_config.get('cacert')
+            if cacert:
+                os.environ["REQUESTS_CA_BUNDLE"] = cacert
+                auth = v3.Password(
+                    auth_url=self.client_config.get('auth_url'),
+                    username=self.client_config.get('username'),
+                    password=self.client_config.get('api_key'),
+                    project_name=self.client_config.get('project_name'),
+                    user_domain_name=self.client_config.get(
+                        'user_domain_name'),
+                    project_domain_name=self.client_config.get(
+                        'project_domain_name'),
+                )
+                sess = session.Session(auth=auth, verify=cacert)
+                self._connection = client_v1.Client(
+                    session=sess,
+                    insecure=self.client_config.get(
+                        'insecure', False))
+            else:
+                self._connection = client.client(**self.client_config)
         return self._connection
 
     def list(self):
@@ -117,7 +141,7 @@ class SubcloudResource(DistributedCloudResource):
                 'external_id': str(resource.subcloud_id),
                 'name': resource.name,
                 'description': resource.description,
-                'location': resource.location,
+                'location': str(resource.location).lower(),
                 'group_id': resource.group_id,
                 'group_name': self.get_subcloud_group_name(resource.group_id),
                 'oam_floating_ip': self.get_oam_floating_ip(resource.name),

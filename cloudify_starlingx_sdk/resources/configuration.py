@@ -38,14 +38,15 @@ class ConfigurationResource(StarlingXResource):
                 continue
             if not key.startswith('os_'):
                 creds['os_{key}'.format(key=key)] = creds.pop(key)
-        cafile = creds.get('os_cacert')
+        cafile = creds.pop('os_cacert', creds.pop('os_ca_file', None))
         if cafile:
-            del creds['os_cacert']
             creds['ca_file'] = cafile
         if 'os_api_key' in creds:
             creds['os_password'] = creds.pop('os_api_key')
         if 'password' in creds:
             del creds['password']
+        if 'os_api_version' in creds:
+            del creds['os_api_version']
         creds['api_version'] = 1
         return creds
 
@@ -97,8 +98,9 @@ class SystemResource(ConfigurationResource):
             'system_type': self.system_type,
             'system_mode': self.system_mode,
             'region_name': self.region_name,
-            'latitude': getattr(self.resource, 'latitude', None),
-            'longitude': getattr(self.resource, 'longitude', None),
+            'latitude': str(getattr(self.resource, 'latitude', None)).lower(),
+            'longitude': str(
+                getattr(self.resource, 'longitude', None)).lower(),
             'distributed_cloud_role': self.distributed_cloud_role
         }
 
@@ -106,7 +108,7 @@ class SystemResource(ConfigurationResource):
         if hasattr(self.resource, name):
             value = getattr(self.resource, name)
         else:
-            value = self.config.get(name, 'null')
+            value = self.config.get(name, 'none')
         if isinstance(value, str):
             return value.lower()
         return value
