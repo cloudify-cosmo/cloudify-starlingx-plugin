@@ -22,7 +22,7 @@ from cloudify import ctx as CloudifyContext
 from cloudify.utils import exception_to_error_cause
 from cloudify.exceptions import NonRecoverableError
 
-from .utils import resolve_ctx, cacert_as_file
+from .utils import resolve_ctx, handle_cert_in_config
 
 
 def with_starlingx_resource(class_decl):
@@ -42,17 +42,7 @@ def with_starlingx_resource(class_decl):
             ctx_node = resolve_ctx(ctx)
             client_config = ctx_node.node.properties.get('client_config')
             resource_config = ctx_node.node.properties.get('resource_config')
-            if 'cacert' in client_config:
-                cafile, cafilename = \
-                    cacert_as_file(client_config['cacert'])
-                client_config['cacert'] = cafilename
-            elif 'os_cacert' in client_config:
-                cafile, cafilename = cacert_as_file(
-                    client_config['os_cacert'])
-                client_config['os_cacert'] = cafilename
-            else:
-                cafile = None
-                cafilename = None
+            cafile, cafilename = handle_cert_in_config(client_config)
             try:
                 resource = class_decl(
                     client_config=client_config,

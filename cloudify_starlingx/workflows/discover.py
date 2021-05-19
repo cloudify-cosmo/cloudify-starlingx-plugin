@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
 from cloudify.exceptions import NonRecoverableError
@@ -51,7 +53,7 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
     if not controller_node_instance:
         ctx.logger.error('No system controller nodes were identified.')
         return False
-    system = get_system(
+    cafile, cafilename, system = get_system(
         ctx.get_node(controller_node_instance.node_id))
     if not system.subcloud_resources:
         ctx.logger.error(
@@ -61,6 +63,9 @@ def discover_subclouds(node_instance_id=None, node_id=None, ctx=None, **_):
             instance=controller_node_instance,
             resources=system.subcloud_resources,
             prop_name='subclouds')
+    if cafile and cafilename:
+        os.close(cafile)
+        os.remove(cafilename)
     return True
 
 
@@ -156,7 +161,6 @@ def discover_and_deploy(node_id=None,
             continue
 
         # How do we get the system object for the subcloud?
-        # system = get_system(ctx.get_node(subcloud_name))
         inputs = {
             'URL': subcloud.get('oam_floating_ip'),
             'region_name': subcloud_name
