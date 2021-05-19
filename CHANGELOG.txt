@@ -37,3 +37,6 @@
 - WDR-34 dump cacert to file for duration of op if not already a file.
 0.0.13:
 - WDR-33 Bugs
+0.0.14:
+- WDR-32 Follow up bug
+- WDR-33 Follow up bug
