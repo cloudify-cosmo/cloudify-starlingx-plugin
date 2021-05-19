@@ -124,6 +124,9 @@ def assign_site(ctx_instance, deployment_id, location):
     if not isinstance(x, float) and isinstance(y, float):
         ctx.logger.error('Invalid location data provided. Not creating site.')
         return
+    if 'none' in location.lower():
+        ctx.logger.error('Invalid location data provided. Not creating site.')
+        return
     site = get_site(location_name)
     if not site:
         create_site(location_name, location)

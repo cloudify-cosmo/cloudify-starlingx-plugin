@@ -42,3 +42,5 @@
 - WDR-33 Follow up bug
 0.0.15:
 - WDR-34 Fix SSL
+0.0.16:
+- WDR-32 Location issue
