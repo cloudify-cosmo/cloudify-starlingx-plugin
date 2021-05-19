@@ -118,11 +118,11 @@ def update_openstack_props(ctx_instance, resources, client_config):
 def assign_site(ctx_instance, deployment_id, location):
     config = ctx_instance.runtime_properties.get('resource_config', {})
     location_name = format_location_name(config.get('location', ''))
-    if not location_name:
-        ctx.logger.error('No location name provided. Not creating site.')
-        return
-    if not location:
-        ctx.logger.error('No location provided. Not creating site.')
+    ctx.logger.debug('Location name {0} location {1}'.format(
+        location_name, location))
+    x, y = location.split(',')
+    if not isinstance(x, float) and isinstance(y, float):
+        ctx.logger.error('Invalid location data provided. Not creating site.')
         return
     site = get_site(location_name)
     if not site:
@@ -133,7 +133,7 @@ def assign_site(ctx_instance, deployment_id, location):
 
 
 def format_location_name(location_name):
-    return re.sub('\\-+', '-', re.sub('[^0-9a-zA-Z]', '-', location_name))
+    return re.sub('\\-+', '-', re.sub('[^0-9a-zA-Z]', '-', str(location_name)))
 
 
 def get_subcloud_group_id_and_name(ctx_instance):
