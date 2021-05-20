@@ -104,7 +104,6 @@ class StarlingXResource(object):
         self.name = self.config.get(self.name_key)
         self._resource = None
         self._connection = None
-        self.logger.info('config {}'.format(self.client_config))
 
     @property
     def connection(self):
