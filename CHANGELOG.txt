@@ -44,3 +44,6 @@
 - WDR-34 Fix SSL
 0.0.16:
 - WDR-32 Location issue
+0.0.17:
+- RD-2155 Add to plugin json
+- Make insecure and cacert mutually exclusive.

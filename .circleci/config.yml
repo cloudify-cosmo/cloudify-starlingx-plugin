@@ -62,6 +62,25 @@ commands:
           paths:
             - build/*
 
+  generate_rhel_py36_wagon:
+    steps:
+      - run:
+          name: Create Workspace Build directory.
+          command: mkdir -p workspace/build
+      - run:
+          name: Build RHEL py36 Wagon
+          command: |
+              git clone https://github.com/cloudify-cosmo/cloudify-wagon-build-containers.git
+              docker build -t cloudify-wagon-builder-redhat cloudify-wagon-build-containers/redhat_7_py3 --build-arg USERNAME="$USERNAME" --build-arg PASSWORD="$PASSWORD"
+              docker run -v ~/project/:/packaging cloudify-wagon-builder-redhat
+      - run:
+          name: copy wagon to workspace
+          command: cp *.wgn workspace/build/
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - build/*
+
   release_plugin:
     steps:
       - run:
@@ -144,6 +163,7 @@ jobs:
     steps:
       - checkout
       - generate_py36_wagon
+      - generate_rhel_py36_wagon
 
   release:
     executor: py36
