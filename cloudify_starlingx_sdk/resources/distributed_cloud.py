@@ -46,9 +46,12 @@ class DistributedCloudResource(StarlingXResource):
     def connection(self):
         if not self._connection:
             cacert = self.client_config.get('cacert')
-            if cacert:
-                os.environ["REQUESTS_CA_BUNDLE"] = cacert
-                auth = v3.Password(
+            insecure = self.client_config.get(
+                'insecure', False)
+            if cacert or insecure:
+                if cacert:
+                    os.environ["REQUESTS_CA_BUNDLE"] = cacert
+                auth_dict = dict(
                     auth_url=self.client_config.get('auth_url'),
                     username=self.client_config.get('username'),
                     password=self.client_config.get('api_key'),
@@ -58,11 +61,12 @@ class DistributedCloudResource(StarlingXResource):
                     project_domain_name=self.client_config.get(
                         'project_domain_name'),
                 )
-                sess = session.Session(auth=auth, verify=cacert)
+                auth = v3.Password(**auth_dict)
+                sess = session.Session(
+                    auth=auth, verify=cacert if not insecure else False)
                 self._connection = client_v1.Client(
                     session=sess,
-                    insecure=self.client_config.get(
-                        'insecure', False))
+                    insecure=insecure)
             else:
                 self._connection = client.client(**self.client_config)
         return self._connection
