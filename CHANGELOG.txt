@@ -51,3 +51,5 @@
 - WDR-32 Bug in HTTPS and insecure
 0.0.19:
 - WDR-32 Revert Make insecure and cacert mutually exclusive
+0.0.20:
+- WDR-32: 6 scenarios
