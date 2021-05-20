@@ -122,13 +122,24 @@ class StarlingXResource(object):
         config.update(kwargs)
         os_kwargs = config.pop('os_kwargs', {})
         config.update(os_kwargs)
+
+        # For httplib2, insecure and ca are mutually exclusive.
+        insecure = config.get('insecure', False)
+        if insecure and 'cacert' in config:
+            del config['cacert']
+        if insecure and 'ca_file' in config:
+            del config['ca_file']
+        if insecure and 'os_cacert' in config:
+            del config['os_cacert']
+
+        # Clean up the auth URL. Add port if necessary. Endpoint version. etc.
         for key in ['os_auth_url', 'auth_url']:
             if key not in config:
                 continue
             # Make sure that we are sending a useful URL.
             config[key] = cleanup_auth_url(config[key])
             # Check that https is used appropriately.
-            if not (config.get('insecure', False) or
+            if not (insecure or
                     'cacert' in config or
                     'ca_file' in config or
                     'os_cacert' in config) and \
