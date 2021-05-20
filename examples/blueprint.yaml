@@ -105,7 +105,7 @@ dsl_definitions:
     user_domain_name: Default
     project_domain_name: Default
     region_name: { get_input: region_name }
-    cacert: { get_secret: { get_input: CA-secret } }
+    # cacert: { get_secret: { get_input: CA-secret } }
     insecure: {  get_input: insecure }
 
 node_templates:

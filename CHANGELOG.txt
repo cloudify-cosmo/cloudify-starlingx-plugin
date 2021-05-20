@@ -47,3 +47,5 @@
 0.0.17:
 - RD-2155 Add to plugin json
 - Make insecure and cacert mutually exclusive.
+0.0.18:
+- WDR-32 Bug in HTTPS and insecure
