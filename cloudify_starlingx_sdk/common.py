@@ -104,6 +104,7 @@ class StarlingXResource(object):
         self.name = self.config.get(self.name_key)
         self._resource = None
         self._connection = None
+        self.logger.info('config {}'.format(self.client_config))
 
     @property
     def connection(self):
@@ -139,7 +140,7 @@ class StarlingXResource(object):
             # Make sure that we are sending a useful URL.
             config[key] = cleanup_auth_url(config[key])
             # Check that https is used appropriately.
-            if not (insecure or
+            if not ('insecure' in config or
                     'cacert' in config or
                     'ca_file' in config or
                     'os_cacert' in config) and \
