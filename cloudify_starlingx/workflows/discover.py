@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+from urllib.parse import urlparse, urlunparse
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
@@ -23,12 +24,14 @@ from ..constants import LABELS
 from ..utils import (
     get_system,
     get_deployment,
+    is_ipv4_address,
     create_deployment,
     install_deployment,
     create_deployments,
     install_deployments,
     update_runtime_properties,
-    get_controller_node_instance)
+    get_controller_node_instance,
+    get_parent_deployment_capabilities)
 
 
 @workflow
@@ -133,13 +136,22 @@ def discover_and_deploy(node_id=None,
     controller_node_instance = get_controller_node_instance(
         node_instance_id, node_id, ctx=ctx)
 
+    parent_deployment_capabilities = get_parent_deployment_capabilities(
+        deployment=get_deployment(ctx.deployment.id))
+    auth_url = parent_deployment_capabilities['wrcp-ip']
+    user_secret = parent_deployment_capabilities['wrcp-user-secret']
+    password_secret = parent_deployment_capabilities['wrcp-password-secret']
+    cacert_secret = parent_deployment_capabilities['wrcp-cacert-secret']
+    wrcp_insecure = parent_deployment_capabilities['wrcp-insecure']
+    scheme, _, __, ___, ____, _____ = urlparse(auth_url)
+
     props = controller_node_instance.runtime_properties
     subclouds = props.get('subclouds', {})
 
     if deployment_id and len(subclouds) > 1:
         raise NonRecoverableError(
             'A deployment ID {dep} was provided, '
-            'but more than one subcloud must be deploymed. '
+            'but more than one subcloud must be deployed. '
             'Either leave deployment ID blank, '
             'or ensure only one subcloud will be provided.'.format(
                 dep=deployment_id))
@@ -161,10 +173,21 @@ def discover_and_deploy(node_id=None,
             continue
 
         # How do we get the system object for the subcloud?
+        ip = subcloud.get('oam_floating_ip')
+        if is_ipv4_address(ip):
+            new_netloc = '{ip}:5000'.format(ip=ip)
+        else:
+            new_netloc = '[{ip}]:5000'.format(ip=ip)
+
         inputs = {
-            'URL': subcloud.get('oam_floating_ip'),
+            'auth_url': urlunparse((scheme, new_netloc, '/v3', '', '', '')),
+            'user_secret': user_secret,
+            'password_secret': password_secret,
+            'cacert_secret': cacert_secret,
+            'insecure': wrcp_insecure,
             'region_name': subcloud_name
         }
+
         labels = [{'csys-env-type': LABELS['types']['subcloud']},
                   {'wrcp-group-id': str(subcloud.get('group_id'))},
                   {'csys-obj-parent': ctx.deployment.id}]

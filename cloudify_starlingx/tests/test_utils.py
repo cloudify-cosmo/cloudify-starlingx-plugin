@@ -227,3 +227,16 @@ class StarlingXUtilsTest(StarlingXTestBase):
         self.assertEqual(
             utils.format_location_name(location_name),
             'mcdonalds-south-march-on')
+
+    def test_auth_url_validate(self):
+        url = 'http://10.10.10.10:5000/v3'
+        self.assertIsNone(utils.validate_auth_url(url))
+        url = '10.10.10.10'
+        self.assertRaises(NonRecoverableError,
+                          utils.validate_auth_url, url, '', False)
+        url = 'https://10.10.10.10'
+        self.assertRaises(NonRecoverableError,
+                          utils.validate_auth_url, url, '', False)
+        url = '10.10.10.10:5000/v3'
+        self.assertRaises(NonRecoverableError,
+                          utils.validate_auth_url, url, '', False)
