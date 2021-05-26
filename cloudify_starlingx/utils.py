@@ -15,9 +15,11 @@
 
 import re
 import sys
-from tempfile import mkstemp
 from time import sleep
 from copy import deepcopy
+from tempfile import mkstemp
+from urllib.parse import urlparse
+from ipaddress import ip_address, IPv4Address
 
 from cloudify import ctx
 from cloudify.workflows import ctx as wtx
@@ -179,12 +181,20 @@ def assign_required_labels(ctx_instance, deployment_id):
 
 
 def get_parent_wrcp_ip(deployment_id=None, deployment=None):
+    deployment_capabilities = get_parent_deployment_capabilities(
+        deployment_id, deployment)
+    return deployment_capabilities['wrcp-ip']
+
+
+def get_parent_deployment_capabilities(deployment_id=None, deployment=None):
     if deployment_id and not deployment:
         deployment = get_parent_deployment(deployment_id)
     if not deployment:
         return
-    return resolve_intrinsic_functions(
-        deployment.capabilities['wrcp-ip']['value'], deployment_id)
+    caps = {}
+    for key, cap in deployment.capabilities.items():
+        caps[key] = resolve_intrinsic_functions(cap['value'], deployment_id)
+    return caps
 
 
 def with_rest_client(func):
@@ -246,6 +256,26 @@ def update_deployment_site(deployment_id, site_name, rest_client):
             deployment_id, detach_site=True)
     return rest_client.deployments.set_site(
         deployment_id, site_name)
+
+
+@with_rest_client
+def get_controller_node(deployment_id, rest_client=None):
+    """Get nodes by node type. There should be one.
+
+    :param node_type:
+    :param deployment_id:
+    :param rest_client:
+    :return:
+    """
+    nodes = []
+    for node in rest_client.nodes.list(deployment_id=deployment_id,
+                                       _includes=['properties']):
+        if CONTROLLER_TYPE in node.type_hierarchy:
+            nodes.append(node)
+    if nodes:
+        return nodes[0]
+    raise NonRecoverableError(
+        'No nodes of type {t} were found.'.format(t=CONTROLLER_TYPE))
 
 
 @with_rest_client
@@ -560,9 +590,10 @@ def handle_cert_in_config(client_config):
             cacert_as_file(cacert)
         client_config['os_cacert'] = cafilename
     else:
+        cacert = None
         cafile = None
         cafilename = None
-    return cafile, cafilename
+    return cacert, cafile, cafilename
 
 
 def get_system(controller_node):
@@ -598,3 +629,43 @@ def cacert_as_file(cacert):
     with open(filename, 'w') as outfile:
         outfile.write(cacert)
     return new_file, filename
+
+
+def is_ipv4_address(ip):
+    if type(ip_address(ip)) is IPv4Address:
+        return True
+    elif ip.startswith('[') or ip.endswith(']'):
+        return True
+    return False
+
+
+def validate_auth_url(auth_url, ca, insecure):
+    scheme, netloc, endpoint, ___, ____, _____ = urlparse(auth_url)
+    message = 'The provided auth_url is' \
+              ' invalid for the following reasons:\n'
+    error = False
+    if scheme not in ['https', 'http']:
+        error = True
+        message += ' - auth_url {au} does not provide a protocol in ' \
+                   '[http://, https://].\n'.format(au=auth_url)
+    if ':5000' not in netloc:
+        error = True
+        message += ' - auth_url {au} does not provide a port in ' \
+                   '[:5000].\n'.format(au=auth_url)
+    if 'v3' not in endpoint:
+        error = True
+        message += ' - auth_url {au} does not provide a path in ' \
+                   '[v3].\n'.format(au=auth_url)
+    if 'https' in scheme and not ca and not insecure:
+        error = True
+        message += ' - insecure is False, CA is not provided, ' \
+                   'but protocol is https.\n'
+    if 'http' in scheme and insecure:
+        error = True
+        message += ' - the protocol is http, but insecure is True.\n'
+    if 'http' in scheme and ca:
+        error = True
+        message += ' - the protocol is http, but a CA os provided.\n'
+
+    if error:
+        raise NonRecoverableError(message)

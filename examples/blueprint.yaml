@@ -5,7 +5,7 @@ description: >
   To discover a system controller's subclouds, use this blueprint to enroll
   the system controller, and then execute the discover_and_deploy workflow.
   To manually enroll a subcloud, provide the URL endpoint of the subcloud,
-  and set region_name input to the name of the subcloud.
+  and set region-name input to the name of the subcloud.
 
 imports:
   - https://cloudify.co/spec/cloudify/5.2.0/types.yaml
@@ -52,40 +52,28 @@ labels:
 
 inputs:
 
-  URL:
+  auth_url:
     type: string
     description: >
-      The URL of the WRCP API endpoint. E.g. http://10.0.2.2:5000/v3.
-      If only an IP or a hostname is provided,
-      the plugin will add "http://" to the beginning of the URL,
-      and ":5000/v3" to the end of the URL.
+      The auth URL of the WRCP API endpoint. E.g. http://10.0.2.2:5000/v3.
+      The IP may be and IPv4 or IPv6 IP.
+      If no protocol is provided, e.g. http:// or https://, then install will fail.
+      If no port is provided, e.g. :5000, then install will fail.
+      If no endpoint path is provided, e.g. /v3, then install will fail.
 
-  User-secret:
+  user_secret:
     type: string
     description: >
-      The name of the secret that contains the username,
-      which will be used to authenticate with StarlingX endpoint.
+      The name of the secret that contains the admin username,
+      which will be used to authenticate with the StarlingX endpoint.
     default: starlingx_username
 
-  Password-secret:
+  password_secret:
     type: string
     description: >
-      The name of the secret that contains the password,
-      also known as api key,
-      which will be used to authenticate with StarlingX endpoint.
+      The name of the secret that contains the admin password,
+      which will be used to authenticate with the StarlingX endpoint.
     default: starlingx_api_key
-
-  CA-secret:
-    type: string
-    description: >
-      The contents of the CA Certificate.
-    default: 'starlingx_cacert'
-
-  insecure:
-    type: boolean
-    description: >
-      True if to skip SSL verification.
-    default: true
 
   region_name:
     type: string
@@ -95,18 +83,33 @@ inputs:
       Subclouds require the subcloud name to be provided.
     default: RegionOne
 
+  cacert_secret:
+    type: string
+    description: >
+      The name of the secret that contains the root CA certificate,
+      which will be used to validate with the StarlingX endpoint certificate.
+      The secret must exist even if you are using http.
+      If you are using http, provide an empty string for the secret value.
+    default: starlingx_cacert
+
+  insecure:
+    type: boolean
+    description: >
+      Disable certificate validation of the StarlingX endpoint certificate.
+    default: false
+
 dsl_definitions:
 
   client_config: &client_config
-    auth_url: { get_input: URL }
-    username: { get_secret: { get_input: User-secret } }
-    api_key: { get_secret: { get_input: Password-secret } }
+    auth_url: { get_input: auth_url }
+    username: { get_secret: { get_input: user_secret } }
+    api_key: { get_secret: { get_input: password_secret } }
     project_name: admin
     user_domain_name: Default
     project_domain_name: Default
     region_name: { get_input: region_name }
-    cacert: { get_secret: { get_input: CA-secret } }
-    insecure: {  get_input: insecure }
+    insecure: { get_input: insecure }
+    cacert: { get_secret: { get_input: cacert_secret } }
 
 node_templates:
 
@@ -118,33 +121,41 @@ node_templates:
 capabilities:
 
   wrcp-ip:
-    description: The external endpoint of the application.
-    value: { get_input: URL }
+    description: The external OAM address of the Cloud Platform.
+    value: { get_input: auth_url }
 
   wrcp-user-secret:
-    description: the secret representing the wrcp access username
-    value: { get_input: User-secret }
+    description: The secret containing the Cloud Platform admin username.
+    value: { get_input: user_secret }
 
-  wrcp-pass-secret:
-    description: The secret representing the wrcp access password.
-    value: { get_input: Password-secret }
+  wrcp-password-secret:
+    description: The secret containing the Cloud Platform admin password.
+    value: { get_input: password_secret }
 
-  k8s-IP:
-    description: The IP required to access its Kubernetes cluster.
+  wrcp-cacert-secret:
+    description: The secret containing the Cloud Platform root CA certificate.
+    value: { get_input: cacert_secret }
+
+  wrcp-insecure:
+    description: A boolean for insecure handling of HTTPS.
+    value: { get_input: insecure }
+
+  k8s-ip:
+    description: The public endpoint of the Kubernetes cluster.
     value: { get_attribute: [ wrcp, k8s_ip ] }
 
   k8s-service-account-token:
-    description: The token required to access that k8s cluster.
+    description: The kubernetes-admin service account for admin access to the Kubernetes cluster.
     value: { get_attribute: [ wrcp, k8s_service_account_token ] }
 
   k8s-cert:
-    description: The certificate required to access that k8s cluster.
+    description: The kubernetes-admin client certificate for admin access to the Kubernetes cluster.
     value: { get_attribute: [ wrcp, k8s_cert ] }
 
   openstack-ip:
-    description: Optional, if open stack is supported. The IP for the Openstack management.
+    description: The endpoint of the OpenStack public endpoint (if installed).
     value: { get_attribute: [ wrcp, openstack_ip ] }
 
   openstack-key:
-    description: Optional, if open stack is supported. The access key for Openstack management
+    description: The access key of the OpenStack public endpoint (if installed).
     value: { get_attribute: [ wrcp, openstack_key ] }

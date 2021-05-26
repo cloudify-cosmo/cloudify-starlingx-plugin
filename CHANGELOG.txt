@@ -53,3 +53,5 @@
 - WDR-32 Revert Make insecure and cacert mutually exclusive
 0.0.20:
 - WDR-32: 6 scenarios
+0.0.21:
+- WDR-40: Use auth_url instead of URL.
