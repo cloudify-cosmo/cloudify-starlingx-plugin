@@ -606,14 +606,14 @@ def handle_cert_in_config(client_config):
     cacert = ''
     cafile = None
     cafilename = None
+    insecure = client_config.pop('insecure', None)
 
     # We should never have these keys if http.
     if http:
-        client_config.pop('insecure', None)
         client_config.pop('cacert', None)
-        client_config.pop('os_cacert')
+        client_config.pop('os_cacert', None)
 
-    if 'cacert' in client_config:
+    elif 'cacert' in client_config:
         cacert = client_config.get('cacert')
         cafile, cafilename = \
             cacert_as_file(cacert)
@@ -623,6 +623,9 @@ def handle_cert_in_config(client_config):
         cafile, cafilename = \
             cacert_as_file(cacert)
         client_config['os_cacert'] = cafilename
+
+    if not http and insecure and cacert:
+        client_config['insecure'] = insecure
 
     return cacert, cafile, cafilename
 
@@ -698,7 +701,7 @@ def validate_auth_url(auth_url, ca, insecure):
         error = True
         message += ' - auth_url does not provide a path in ' \
                    '[v3].\n'
-    if 'https://' in auth_url and not ca and not insecure:
+    if 'https://' in auth_url and not ca and insecure is False:
         error = True
         message += ' - insecure is False, CA is not provided, ' \
                    'but protocol is https.\n'

@@ -108,8 +108,10 @@ class SubcloudResource(DistributedCloudResource):
         return result
 
     def get_detail(self):
-        self.logger.info('Get Detail Log: resource name {}'.format(self.resource.name))
-        self.logger.info('Get Detail Log: resource name type {}'.format(type(self.resource.name)))
+        self.logger.info('Get Detail Log: resource name {}'.format(
+            self.resource.name))
+        self.logger.info('Get Detail Log: resource name type {}'.format(
+            type(self.resource.name)))
         return self._get_detail(self.resource.name)
 
     @property

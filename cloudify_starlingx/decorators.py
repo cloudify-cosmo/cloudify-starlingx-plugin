@@ -43,7 +43,9 @@ def with_starlingx_resource(class_decl):
             client_config = ctx_node.node.properties.get('client_config')
             cacert, cafile, cafilename = handle_cert_in_config(client_config)
             validate_auth_url(
-                client_config['auth_url'], cacert, client_config['insecure'])
+                client_config['auth_url'],
+                cacert,
+                client_config.get('insecure'))
             resource_config = ctx_node.node.properties.get('resource_config')
             try:
                 resource = class_decl(
