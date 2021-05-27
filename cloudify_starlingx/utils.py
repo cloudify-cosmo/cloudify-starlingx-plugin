@@ -15,6 +15,7 @@
 
 import re
 import sys
+import base64
 from time import sleep
 from copy import deepcopy
 from tempfile import mkstemp
@@ -97,12 +98,24 @@ def update_prop_resources(ctx_instance, resources, config_key=None):
 def update_kubernetes_props(ctx_instance, resources):
     if resources:
         cluster = resources[0]
+        ctx_instance.runtime_properties['k8s_cluster_name'] = \
+            cluster.resource.cluster_name
+        ctx_instance.runtime_properties['k8s_admin_user'] = \
+            cluster.resource.admin_user
         ctx_instance.runtime_properties['k8s_ip'] = \
             cluster.resource.cluster_api_endpoint
-        ctx_instance.runtime_properties['k8s_service_account_token'] = \
-            cluster.resource.admin_token
-        ctx_instance.runtime_properties['k8s_cert'] = \
+        if cluster.resource.admin_token:
+            ctx_instance.runtime_properties['k8s_service_account_token'] = \
+                base64.b64decode(cluster.resource.admin_token).decode('utf-8')
+        else:
+            ctx_instance.runtime_properties['k8s_service_account_token'] = \
+                ''
+        ctx_instance.runtime_properties['k8s_cacert'] = \
             cluster.resource.cluster_ca_cert
+        ctx_instance.runtime_properties['k8s_admin_client_cert'] = \
+            cluster.resource.admin_client_cert
+        ctx_instance.runtime_properties['k8s_admin_client_key'] = \
+            cluster.resource.admin_client_key
 
 
 def update_openstack_props(ctx_instance, resources, client_config):
@@ -575,24 +588,45 @@ def get_controller_node_instance(node_instance_id=None,
 
 
 def handle_cert_in_config(client_config):
-    if 'cacert' in client_config:
+    """If https, we need a cert, and we need the file path. However,
+    users pass this as a string. (No files from users thanks!)
+    So, we need to get the cert, and write it as file.
+
+    :param client_config:
+    :return: (tuple):
+      cacert: the ca material, for validating the auth URL.
+      cafile: the file pointer, for closing the file later.
+      cafilename: the path to make sure it gets deleted.
+    """
+
+    # Find out if we have http, so that we know to make sure that ca is not
+    # sent.
+    http = 'http://' in client_config['auth_url']
+    # Set defaults so that we can send None values back using names.
+    cacert = ''
+    cafile = None
+    cafilename = None
+    insecure = client_config.pop('insecure', None)
+
+    # We should never have these keys if http.
+    if http:
+        client_config.pop('cacert', None)
+        client_config.pop('os_cacert', None)
+
+    elif 'cacert' in client_config:
         cacert = client_config.get('cacert')
-        if not cacert:
-            return
         cafile, cafilename = \
             cacert_as_file(cacert)
         client_config['cacert'] = cafilename
     elif 'os_cacert' in client_config:
         cacert = client_config.get('os_cacert')
-        if not cacert:
-            return
         cafile, cafilename = \
             cacert_as_file(cacert)
         client_config['os_cacert'] = cafilename
-    else:
-        cacert = None
-        cafile = None
-        cafilename = None
+
+    if not http and insecure and cacert:
+        client_config['insecure'] = insecure
+
     return cacert, cafile, cafilename
 
 
@@ -604,7 +638,7 @@ def get_system(controller_node):
     """
     client_config = desecretize_client_config(
         controller_node.properties.get('client_config', {}))
-    cafile, cafilename = handle_cert_in_config(client_config)
+    _, cafile, cafilename = handle_cert_in_config(client_config)
     try:
         return cafile, cafilename, SystemResource(
             client_config=client_config,
@@ -625,6 +659,8 @@ def get_system(controller_node):
 
 
 def cacert_as_file(cacert):
+    if not isinstance(cacert, str):
+        raise NonRecoverableError('The CA certificate must be as string.')
     new_file, filename = mkstemp()
     with open(filename, 'w') as outfile:
         outfile.write(cacert)
@@ -640,32 +676,41 @@ def is_ipv4_address(ip):
 
 
 def validate_auth_url(auth_url, ca, insecure):
+    """ Give the user helpful error messages if we receive a combination
+    that makes no sense.
+
+    :param auth_url:
+      A string in the form [protocol://] [IPv4 or IPv6 URL] [:PORT 5000] [/v3]
+    :param ca: The string content of the ca.
+    :param insecure: Whether the user intends to ignore SSL validation.
+    :return:
+    """
     scheme, netloc, endpoint, ___, ____, _____ = urlparse(auth_url)
-    message = 'The provided auth_url is' \
-              ' invalid for the following reasons:\n'
+    message = 'The provided auth_url {au} is' \
+              ' invalid for the following reasons:\n'.format(au=auth_url)
     error = False
     if scheme not in ['https', 'http']:
         error = True
-        message += ' - auth_url {au} does not provide a protocol in ' \
-                   '[http://, https://].\n'.format(au=auth_url)
-    if ':5000' not in netloc:
+        message += ' - auth_url does not provide a protocol in ' \
+                   '[http://, https://].\n'
+    if ':5000' not in auth_url:
         error = True
-        message += ' - auth_url {au} does not provide a port in ' \
-                   '[:5000].\n'.format(au=auth_url)
-    if 'v3' not in endpoint:
+        message += ' - auth_url does not provide a port in ' \
+                   '[:5000].\n'
+    if '/v3' not in auth_url:
         error = True
-        message += ' - auth_url {au} does not provide a path in ' \
-                   '[v3].\n'.format(au=auth_url)
-    if 'https' in scheme and not ca and not insecure:
+        message += ' - auth_url does not provide a path in ' \
+                   '[v3].\n'
+    if 'https://' in auth_url and not ca and insecure is False:
         error = True
         message += ' - insecure is False, CA is not provided, ' \
                    'but protocol is https.\n'
-    if 'http' in scheme and insecure:
+    if 'http://' in auth_url and insecure:
         error = True
         message += ' - the protocol is http, but insecure is True.\n'
-    if 'http' in scheme and ca:
+    if 'http://' in auth_url and ca:
         error = True
-        message += ' - the protocol is http, but a CA os provided.\n'
+        message += ' - the protocol is http, but a CA is provided.\n'
 
     if error:
         raise NonRecoverableError(message)

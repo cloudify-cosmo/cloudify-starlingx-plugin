@@ -34,9 +34,7 @@ class ConfigurationResource(StarlingXResource):
     def cleanup_config(config):
         creds = deepcopy(config)
         for key, val in list(creds.items()):
-            if key == 'insecure':
-                continue
-            if not key.startswith('os_'):
+            if not key.startswith('os_') and key != 'insecure':
                 creds['os_{key}'.format(key=key)] = creds.pop(key)
         cafile = creds.pop('os_cacert', creds.pop('os_ca_file', None))
         if cafile:
@@ -52,8 +50,11 @@ class ConfigurationResource(StarlingXResource):
 
     @property
     def connection(self):
+        creds = deepcopy(self.client_config)
+        if creds.get('insecure', False) and 'ca_file' in creds:
+            del creds['ca_file']
         if not self._connection:
-            self._connection = get_client(**self.client_config)
+            self._connection = get_client(**creds)
         return self._connection
 
     def list(self):

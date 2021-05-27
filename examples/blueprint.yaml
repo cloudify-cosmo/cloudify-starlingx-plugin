@@ -140,6 +140,14 @@ capabilities:
     description: A boolean for insecure handling of HTTPS.
     value: { get_input: insecure }
 
+  k8s-cluster-name:
+    description: The public endpoint of the Kubernetes cluster.
+    value: { get_attribute: [ wrcp, k8s_cluster_name ] }
+
+  k8s-admin-user:
+    description: The public endpoint of the Kubernetes cluster.
+    value: { get_attribute: [ wrcp, k8s_admin_user ] }
+
   k8s-ip:
     description: The public endpoint of the Kubernetes cluster.
     value: { get_attribute: [ wrcp, k8s_ip ] }
@@ -148,9 +156,17 @@ capabilities:
     description: The kubernetes-admin service account for admin access to the Kubernetes cluster.
     value: { get_attribute: [ wrcp, k8s_service_account_token ] }
 
-  k8s-cert:
+  k8s-cacert:
     description: The kubernetes-admin client certificate for admin access to the Kubernetes cluster.
-    value: { get_attribute: [ wrcp, k8s_cert ] }
+    value: { get_attribute: [ wrcp, k8s_cacert ] }
+
+  k8s-admin-client-cert:
+    description: The kubernetes-admin client certificate for admin access to the Kubernetes cluster.
+    value: { get_attribute: [ wrcp, k8s_admin_client_cert ] }
+
+  k8s-admin-client-key:
+    description: The kubernetes-admin client certificate for admin access to the Kubernetes cluster.
+    value: { get_attribute: [ wrcp, k8s_admin_client_key ] }
 
   openstack-ip:
     description: The endpoint of the OpenStack public endpoint (if installed).
