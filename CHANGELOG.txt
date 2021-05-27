@@ -55,3 +55,11 @@
 - WDR-32: 6 scenarios
 0.0.21:
 - WDR-40: Use auth_url instead of URL.
+0.0.21.1:
+- debug version
+0.0.21.2:
+- debug version
+0.0.21.3:
+- debug version
+0.0.22:
+- debug version with WDR-42 WDR-43
