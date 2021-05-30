@@ -16,12 +16,13 @@
 import os
 from copy import deepcopy
 
-from ..common import StarlingXResource
+from ..common import (StarlingXResource, StarlingXException)
 
 from keystoneauth1 import session
 from keystoneauth1.identity import v3
 
 from dcmanagerclient.api import client
+from dcmanagerclient.exceptions import APIException
 from dcmanagerclient.api.v1 import client as client_v1
 from keystoneauth1.exceptions.catalog import EndpointNotFound
 
@@ -112,7 +113,10 @@ class SubcloudResource(DistributedCloudResource):
             self.resource.name))
         self.logger.info('Get Detail Log: resource name type {}'.format(
             type(self.resource.name)))
-        return self._get_detail(self.resource.name)
+        try:
+            return self._get_detail(self.resource.name)
+        except APIException as e:
+            raise StarlingXException(e)
 
     @property
     def oam_floating_ip(self):
