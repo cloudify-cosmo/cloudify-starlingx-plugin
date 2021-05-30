@@ -138,11 +138,16 @@ def discover_and_deploy(node_id=None,
 
     parent_deployment_capabilities = get_parent_deployment_capabilities(
         deployment=get_deployment(ctx.deployment.id))
-    auth_url = parent_deployment_capabilities['wrcp-ip']
-    user_secret = parent_deployment_capabilities['wrcp-user-secret']
-    password_secret = parent_deployment_capabilities['wrcp-password-secret']
-    cacert_secret = parent_deployment_capabilities['wrcp-cacert-secret']
-    wrcp_insecure = parent_deployment_capabilities['wrcp-insecure']
+    auth_url = parent_deployment_capabilities.get('wrcp-ip', '')
+    user_secret = parent_deployment_capabilities.get('wrcp-user-secret', '')
+    password_secret = parent_deployment_capabilities.get(
+        'wrcp-password-secret', '')
+    cacert_secret = parent_deployment_capabilities.get(
+        'wrcp-cacert-secret',
+        '')
+    wrcp_insecure = parent_deployment_capabilities.get(
+        'wrcp-insecure',
+        '')
     scheme, _, __, ___, ____, _____ = urlparse(auth_url)
 
     props = controller_node_instance.runtime_properties
