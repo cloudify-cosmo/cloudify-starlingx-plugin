@@ -196,17 +196,17 @@ def assign_required_labels(ctx_instance, deployment_id):
 def get_parent_wrcp_ip(deployment_id=None, deployment=None):
     deployment_capabilities = get_parent_deployment_capabilities(
         deployment_id, deployment)
-    return deployment_capabilities['wrcp-ip']
+    return deployment_capabilities.get('wrcp-ip', '')
 
 
 def get_parent_deployment_capabilities(deployment_id=None, deployment=None):
+    caps = {}
     if deployment_id and not deployment:
         deployment = get_parent_deployment(deployment_id)
-    if not deployment:
-        return
-    caps = {}
-    for key, cap in deployment.capabilities.items():
-        caps[key] = resolve_intrinsic_functions(cap['value'], deployment_id)
+    if deployment:
+        for key, cap in deployment.capabilities.items():
+            caps[key] = resolve_intrinsic_functions(
+                cap['value'], deployment_id)
     return caps
 
 
