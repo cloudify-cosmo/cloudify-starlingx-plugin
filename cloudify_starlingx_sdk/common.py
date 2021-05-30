@@ -16,6 +16,10 @@
 from copy import deepcopy
 
 
+class StarlingXException(Exception):
+    pass
+
+
 class InvalidINSecureValue(Exception):
     pass
 

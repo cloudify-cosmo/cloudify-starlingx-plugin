@@ -20,8 +20,9 @@ import sys
 # Third party imports
 from cloudify import ctx as CloudifyContext
 from cloudify.utils import exception_to_error_cause
-from cloudify.exceptions import NonRecoverableError
+from cloudify.exceptions import (OperationRetry, NonRecoverableError)
 
+from cloudify_starlingx_sdk.common import StarlingXException
 from .utils import resolve_ctx, validate_auth_url, handle_cert_in_config
 
 
@@ -53,6 +54,11 @@ def with_starlingx_resource(class_decl):
                     resource_config=resource_config,
                     logger=ctx.logger)
                 func(resource, ctx)
+            except StarlingXException as errors:
+                raise OperationRetry(
+                    'Attempting WRCP registration again, '
+                    'due to invalid response from DC API. {e}'.format(
+                        e=errors))
             except Exception as errors:
                 _, _, tb = sys.exc_info()
                 if hasattr(errors, 'message'):
