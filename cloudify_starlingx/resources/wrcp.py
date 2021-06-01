@@ -46,6 +46,9 @@ def poststart(resource, ctx):
         update_subcloud_resource(resource,
                                  ctx.instance,
                                  ctx.deployment.id)
+        add_new_label('csys-env-type',
+                      LABELS['types']['subcloud'],
+                      ctx.deployment.id)
     elif resource.is_system_controller:
         update_prop_resources(
             ctx.instance, resource.subcloud_resources, 'subclouds')
