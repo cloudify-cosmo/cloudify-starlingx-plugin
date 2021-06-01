@@ -71,3 +71,5 @@
 - WDR-47 Duplicate Subcloud deployments
 0.0.26:
 - WDR-46 Manual Subcloud Label
+0.0.27:
+- WDR-41 SSL Error clear error
