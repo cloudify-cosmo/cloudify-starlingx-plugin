@@ -67,3 +67,5 @@
 - WDR-25 Catch bytes error on oam_floating_ip and retry
 0.0.24:
 - WDR-46 Manual Subcloud Enrollment fix
+0.0.25:
+- WDR-47 Duplicate Subcloud deployments

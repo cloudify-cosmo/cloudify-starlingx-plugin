@@ -31,7 +31,8 @@ from ..utils import (
     install_deployments,
     update_runtime_properties,
     get_controller_node_instance,
-    get_parent_deployment_capabilities)
+    get_parent_deployment_capabilities,
+    check_if_subcloud_discovered_and_deployed)
 
 
 @workflow
@@ -171,7 +172,8 @@ def discover_and_deploy(node_id=None,
 
         _deployment_id = deployment_id or generate_deployment_id(subcloud_name)
 
-        if get_deployment(_deployment_id):
+        if check_if_subcloud_discovered_and_deployed(_deployment_id,
+                                                     ctx.deployment.id):
             ctx.logger.info(
                 'A deployment for subcloud {sub} {dep} already exists.'.format(
                     sub=subcloud_name, dep=_deployment_id))
