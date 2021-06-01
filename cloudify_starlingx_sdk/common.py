@@ -24,6 +24,11 @@ class InvalidINSecureValue(Exception):
     pass
 
 
+class StarlingXFatalException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 class StarlingXResource(object):
     # Taken from Cloudify Openstack Plugin v3, because they are basically
     # the same API base. Maybe we will merge plugins later.

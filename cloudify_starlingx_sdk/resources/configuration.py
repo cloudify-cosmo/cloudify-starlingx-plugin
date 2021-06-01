@@ -16,8 +16,9 @@
 from copy import deepcopy
 
 from cgtsclient.client import get_client
+from keystoneauth1.exceptions.auth import AuthorizationFailure
 
-from ..common import StarlingXResource
+from ..common import (StarlingXResource, StarlingXFatalException)
 from .distributed_cloud import SubcloudResource
 
 NOT_STANDALONE = ['subcloud', 'systemcontroller']
@@ -54,7 +55,12 @@ class ConfigurationResource(StarlingXResource):
         if creds.get('insecure', False) and 'ca_file' in creds:
             del creds['ca_file']
         if not self._connection:
-            self._connection = get_client(**creds)
+            try:
+                self._connection = get_client(**creds)
+            except AuthorizationFailure as e:
+                if 'sslerror' in str(e).lower():
+                    raise StarlingXFatalException('SSL validation failed.')
+                raise StarlingXFatalException(e)
         return self._connection
 
     def list(self):
