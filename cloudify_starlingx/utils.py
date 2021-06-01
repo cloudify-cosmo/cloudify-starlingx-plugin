@@ -535,6 +535,29 @@ def get_deployment(deployment_id, rest_client):
 
 
 @with_rest_client
+def check_if_subcloud_discovered_and_deployed(display_name,
+                                              parent_id,
+                                              rest_client):
+    """ See if a subcloud has already been discovered and deployed.
+    This does provide idempotent behavior on manually registered subclouds.
+
+    :param display_name:
+    :param parent_id:
+    :param rest_client:
+    :return:
+    """
+    return {'display_name': display_name} in rest_client.deployments.list(
+            _include=['display_name'],
+            filter_rules=[
+                {'type': 'label',
+                 'operator': 'any_of',
+                 'key': 'csys-obj-parent',
+                 'values': [parent_id]
+                 }
+            ])
+
+
+@with_rest_client
 def get_input(input_name, rest_client):
     deployment = rest_client.deployments.get(wtx.deployment.id)
     return deployment.inputs.get(input_name)
