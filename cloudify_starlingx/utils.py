@@ -30,7 +30,8 @@ from cloudify.utils import exception_to_error_cause
 from dcmanagerclient.exceptions import APIException
 from cloudify_rest_client.exceptions import (
     CloudifyClientError,
-    DeploymentEnvironmentCreationPendingError)
+    DeploymentEnvironmentCreationPendingError,
+    DeploymentEnvironmentCreationInProgressError)
 from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
 
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
@@ -436,19 +437,39 @@ def create_deployments(group_id,
                        inputs,
                        labels,
                        rest_client):
-
+    """Create a deployment group and create deployments in it.
+    :param group_id:
+    :param blueprint_id:
+    :param deployment_ids:
+    :param inputs:
+    :param labels:
+    :param rest_client:
+    :return:
+    """
     rest_client.deployment_groups.put(
         group_id=group_id,
         blueprint_id=blueprint_id)
-    rest_client.deployment_groups.add_deployments(
-        group_id,
-        new_deployments=[
-            {
-                'display_name': deployment_id,
-                'labels': labels[n],
-                'inputs': inputs[n]
-            } for n, deployment_id in enumerate(deployment_ids)]
-    )
+    try:
+        rest_client.deployment_groups.add_deployments(
+            group_id,
+            new_deployments=[
+                {
+                    'display_name': dep_id,
+                    'inputs': inp,
+                    'labels': label
+                } for dep_id, inp, label in zip(
+                    deployment_ids, inputs, labels)]
+        )
+    except TypeError:
+        for dep_id, inp, label in zip(deployment_ids, inputs, labels):
+            rest_client.deployments.create(
+                blueprint_id,
+                dep_id,
+                inputs=inp,
+                labels=label)
+        rest_client.deployment_groups.add_deployments(
+            group_id,
+            deployment_ids=deployment_ids)
 
 
 @with_rest_client
@@ -465,7 +486,8 @@ def install_deployment(deployment_id, rest_client):
     while True:
         try:
             return rest_client.executions.start(deployment_id, 'install')
-        except DeploymentEnvironmentCreationPendingError as e:
+        except (DeploymentEnvironmentCreationPendingError,
+                DeploymentEnvironmentCreationInProgressError) as e:
             attempts += 1
             if attempts > 15:
                 raise NonRecoverableError(
@@ -482,7 +504,8 @@ def install_deployments(group_id, rest_client):
     while True:
         try:
             return rest_client.execution_groups.start(group_id, 'install')
-        except DeploymentEnvironmentCreationPendingError as e:
+        except (DeploymentEnvironmentCreationPendingError,
+                DeploymentEnvironmentCreationInProgressError) as e:
             attempts += 1
             if attempts > 15:
                 raise NonRecoverableError(

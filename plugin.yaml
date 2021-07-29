@@ -2,9 +2,9 @@ plugins:
 
   starlingx:
     executor: central_deployment_agent
-    source: https://github.com/cloudify-cosmo/cloudify-starlingx-plugin/archive/0.0.27.zip
+    source: https://github.com/cloudify-cosmo/cloudify-starlingx-plugin/archive/0.0.28.zip
     package_name: cloudify-starlingx-plugin
-    package_version: '0.0.27'
+    package_version: '0.0.28'
 
 dsl_definitions:
 

@@ -73,3 +73,5 @@
 - WDR-46 Manual Subcloud Label
 0.0.27:
 - WDR-41 SSL Error clear error
+0.0.28:
+- RD-2883 Group deployment support 5.2.4
