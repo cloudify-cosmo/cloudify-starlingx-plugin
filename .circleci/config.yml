@@ -203,12 +203,19 @@ jobs:
       - checkout
       - release_plugin
 
+  validate_documentation:
+    executor: py36
+    steps:
+      - checkout
+      - validate_documentation
+
 workflows:
   version: 2
   tests:
     jobs:
       - unittests_py36
       - validate_version
+      - validate_documentation
       - wagon:
           filters:
             branches:
