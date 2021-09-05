@@ -143,6 +143,38 @@ commands:
           at: workspace
       - run: ecosystem-test validate-plugin-version
 
+  validate_documentation:
+    steps:
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update --remote --recursive
+      - run:
+          name: Download pip
+          command: curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+      - run:
+          name: Install pip
+          command: sudo python get-pip.py
+      - run:
+          name: Install virtualenv
+          command: pip install --user virtualenv
+      - run:
+          name: Init virtualenv
+          command: virtualenv env
+      - run:
+          name: install tox
+          command: pip install --user pygithub pyyaml==3.10
+      - run:
+          name: upgrade setuptools
+          command: pip install --upgrade setuptools
+      - run:
+          name: install local project
+          command: pip install https://github.com/cloudify-incubator/cloudify-ecosystem-test/archive/latest.zip
+      - attach_workspace:
+          at: workspace
+      - run: ecosystem-test validate-docs
+
   merge_docs:
     steps:
       - attach_workspace:
@@ -201,6 +233,12 @@ jobs:
       - checkout
       - validate_version
 
+  validate_documentation:
+    executor: py36
+    steps:
+      - checkout
+      - validate_documentation
+
   wagon:
     executor: wagon_generator
     steps:
@@ -226,6 +264,7 @@ workflows:
     jobs:
       - unittests_py36
       - validate_version
+      - validate_documentation
       - wagon:
           filters:
             branches:
@@ -236,6 +275,7 @@ workflows:
               only: /master/
           requires:
             - wagon
+            - validate_documentation
       - merge_docs:
           filters:
             branches:
