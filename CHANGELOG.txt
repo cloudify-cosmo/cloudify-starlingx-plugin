@@ -75,3 +75,5 @@
 - WDR-41 SSL Error clear error
 0.0.28:
 - RD-2883 Group deployment support 5.2.4
+0.0.29:
+- Rerelease for aarch64.
