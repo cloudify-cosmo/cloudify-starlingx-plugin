@@ -275,12 +275,6 @@ jobs:
     steps:
       - checkout
       - generate_arch64_wagon
-  rhel_wagon:
-    executor: wagon_generator
-    steps:
-      - checkout
-      - generate_rhel_py36_wagon
-
 
   release:
     executor: py36
