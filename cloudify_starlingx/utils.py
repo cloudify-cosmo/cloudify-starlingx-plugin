@@ -336,10 +336,15 @@ def update_runtime_properties(instance,
         if resource.resource_id not in prop:
             prop.update(**resource.to_dict())
         props[prop_name] = prop
-        rest_client.node_instances.update(instance.id,
-                                          instance.state,
-                                          props,
-                                          int(instance.version) + 1)
+        instance_version = int(instance.version) + 1
+        while True:
+            try:
+                rest_client.node_instances.update(instance.id,
+                                                  instance.state,
+                                                  props,
+                                                  instance_version)
+            except CloudifyClientError:
+                instance_version += 1
 
 
 def desecretize_client_config(config):

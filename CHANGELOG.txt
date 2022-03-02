@@ -77,3 +77,5 @@
 - RD-2883 Group deployment support 5.2.4
 0.0.29:
 - Rerelease for aarch64.
+0.0.30:
+- Try to handle instance update conflicts.
