@@ -15,6 +15,7 @@
 
 from unittest.mock import patch
 
+from cloudify.state import current_ctx
 from cloudify.constants import NODE_INSTANCE
 from cloudify.exceptions import NonRecoverableError
 
@@ -48,6 +49,9 @@ class StarlingXControllerTest(StarlingXTestBase):
             'system_mode': 'simplex'
         }
         # Test that everything goes smoothly with a valid configuration.
+        ctx.node.properties['client_config']['auth_url'] = \
+            'https://example.com:5000/v3'
+        current_ctx.set(ctx=ctx)
         with patch('cloudify_starlingx_sdk.'
                    'resources.configuration.'
                    'SystemResource.is_subcloud', return_value=True):

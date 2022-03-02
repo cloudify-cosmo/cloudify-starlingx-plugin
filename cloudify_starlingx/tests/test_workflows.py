@@ -49,7 +49,14 @@ class StarlingXWorkflowTest(StarlingXTestBase):
             'external_id': 'foo',
             'name': 'foo',
             'resource_config': {'distributed_cloud_role': 'systemcontroller'},
-            'subclouds': {'foo': {'name': 'foo'}}
+            'subclouds': {
+                'subcloud2': {
+                    'external_id': 'scII',
+                    'name': 'sc2',
+                    'oam_floating_ip': '10.10.10.11'
+
+                }
+            }
         }
         instances_list = [mock_instance]
         mock_instances_client = MagicMock()
@@ -98,7 +105,7 @@ class StarlingXWorkflowTest(StarlingXTestBase):
             'subcloud1': {
                 'external_id': 'taco',
                 'name': 'bell',
-                'oam_floating_ip': 'baz'
+                'oam_floating_ip': '10.10.10.10'
             }
         }
         current_ctx.set(ctx)
