@@ -12,9 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import base64
 from unittest.mock import patch, call, Mock
 
+from cloudify.state import current_ctx
 from cloudify.exceptions import NonRecoverableError
 from cloudify.constants import RELATIONSHIP_INSTANCE
 
@@ -55,18 +56,19 @@ class StarlingXUtilsTest(StarlingXTestBase):
 
     def test_kubernetes_openstack_props(self):
         k = Mock()
+        admin_token = 'Zm9vCg=='
         k.resource = Mock(
             cluster_api_endpoint='foo',
-            admin_token='bar',
+            admin_token=admin_token,
             cluster_ca_cert='baz',
             value='bar')
         ctx = self.get_mock_ctx('foo')
         utils.update_kubernetes_props(ctx.instance, [k])
         assert ctx.instance.runtime_properties['k8s_ip'] == 'foo'
-        assert \
-            ctx.instance.runtime_properties['k8s_service_account_token'] == \
-            'bar'
-        assert ctx.instance.runtime_properties['k8s_cert'] == 'baz'
+        assert ctx.instance.runtime_properties[
+                   'k8s_service_account_token'] == \
+               base64.b64decode(admin_token).decode('utf-8')
+        assert ctx.instance.runtime_properties['k8s_cacert'] == 'baz'
         utils.update_openstack_props(ctx.instance,
                                      [k],
                                      ctx.node.properties['client_config'])
@@ -88,7 +90,11 @@ class StarlingXUtilsTest(StarlingXTestBase):
         mock_ctx.get_node.assert_called_with('foo')
         utils.get_instances_of_nodes(node_type='foo', deployment_id='bar')
         assert call().node_instances.list(
-            _includes=['version', 'runtime_properties', 'node_id'],
+            _includes=['id',
+                       'state',
+                       'version',
+                       'runtime_properties',
+                       'node_id'],
             deployment_id='bar', state='started') in mock_client.mock_calls
 
     @patch('cloudify_starlingx.utils.get_rest_client')
@@ -97,7 +103,11 @@ class StarlingXUtilsTest(StarlingXTestBase):
             node_type='foo', deployment_id='bar')
         self.assertIsInstance(result, list)
         assert call().node_instances.list(
-            _includes=['version', 'runtime_properties', 'node_id'],
+            _includes=['id',
+                       'state',
+                       'version',
+                       'runtime_properties',
+                       'node_id'],
             deployment_id='bar', state='started') in mock_client.mock_calls
 
     @patch('cloudify_starlingx.utils.get_rest_client')
@@ -209,6 +219,7 @@ class StarlingXUtilsTest(StarlingXTestBase):
     @patch('cloudify_starlingx.utils.get_rest_client')
     def test_assign_site(self, mock_client):
         ctx = self.get_mock_ctx()
+        current_ctx.set(ctx=ctx)
         prop = {
             'ctx_instance': ctx.instance,
             'deployment_id': 'foo',
