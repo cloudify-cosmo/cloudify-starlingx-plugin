@@ -79,3 +79,5 @@
 - Rerelease for aarch64.
 0.0.30:
 - Try to handle instance update conflicts.
+0.0.31:
+- Try to handle instance update conflicts.
