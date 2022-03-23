@@ -50,8 +50,13 @@ def poststart(resource, ctx):
                       LABELS['types']['subcloud'],
                       ctx.deployment.id)
     elif resource.is_system_controller:
-        update_prop_resources(
-            ctx.instance, resource.subcloud_resources, 'subclouds')
+        if 'subcloud_names' not in ctx.instance.runtime_properties:
+            ctx.instance.runtime_properties['subcloud_names'] = []
+        for subcloud_name in resource.subcloud_resource_names:
+            ctx.instance.runtime_properties['subcloud_names'].append(
+                subcloud_name)
+        # update_prop_resources(
+        #     ctx.instance, resource.subcloud_resources, 'subclouds')
         add_new_label('csys-env-type',
                       LABELS['types']['systemcontroller'],
                       ctx.deployment.id)

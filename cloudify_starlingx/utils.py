@@ -15,7 +15,9 @@
 
 import re
 import sys
+import time
 import base64
+import asyncio
 from time import sleep
 from copy import deepcopy
 from tempfile import mkstemp
@@ -37,6 +39,13 @@ from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 CONTROLLER_TYPE = 'cloudify.nodes.starlingx.WRCP'
+
+
+def background(f):
+    def wrapped(*args, **kwargs):
+        return asyncio.get_event_loop(
+            ).run_in_executor(None, f, *args, **kwargs)
+    return wrapped
 
 
 def resolve_node_ctx_from_relationship(_ctx):
@@ -447,6 +456,24 @@ def create_deployments(group_id,
     :param rest_client:
     :return:
     """
+
+    @background
+    def create_deployment_background(blueprint_id, dep_id, inp, label):
+        rest_client.deployments.create(
+            blueprint_id,
+            dep_id,
+            inputs=inp,
+            labels=label)
+        c = 0
+        while True:
+            if get_deployment(dep_id):
+                break
+            time.sleep(2)
+            c += 1
+            if c >= 15:
+                raise NonRecoverableError(
+                    'Failed to create deployment {}'.format(dep_id))
+
     rest_client.deployment_groups.put(
         group_id=group_id,
         blueprint_id=blueprint_id)
@@ -463,7 +490,7 @@ def create_deployments(group_id,
         )
     except TypeError:
         for dep_id, inp, label in zip(deployment_ids, inputs, labels):
-            rest_client.deployments.create(
+            create_deployment_background(
                 blueprint_id,
                 dep_id,
                 inputs=inp,

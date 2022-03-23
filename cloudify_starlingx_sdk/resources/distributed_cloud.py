@@ -81,47 +81,65 @@ class DistributedCloudResource(StarlingXResource):
 
 class SubcloudResource(DistributedCloudResource):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._subcloud_detail = None
+        self._subcloud_group_detail = None
+
     id_key = 'subcloud_id'
 
     def list(self):
         return self.connection.subcloud_manager.list_subclouds()
 
-    def _get(self, resource_id):
-        try:
-            result = self.connection.subcloud_manager.subcloud_detail(
-                resource_id)
-        except EndpointNotFound:
-            return None
+    def get(self, name=None):
+        name = name or self.resource_id
+        return self._get(name)
+
+    def _get(self, resource_id=None):
+        resource_id = resource_id or self.resource_id
+        if resource_id == self.resource_id:
+            return self.subcloud_detail
+        return self._get_detail(resource_id)
+
+        # try:
+        #     # result = self.connection.subcloud_manager.subcloud_detail(
+        #     #     resource_id)
+        #     return self._get_detail(resource_id)
+        # except EndpointNotFound:
+        #     return None
         # I am not sure why they return a list here.
-        if len(result) == 1:
-            return result[0]
-        return result
+        # if len(result) == 1:
+        #     return result[0]
+        # return result
 
-    def get(self):
-        return self._get(self.resource_id)
+    @property
+    def subcloud_detail(self):
+        if not self._subcloud_detail:
+            self._subcloud_detail = self.get_detail()
+        return self._subcloud_detail
 
-    def _get_detail(self, name):
-        result = self.connection.subcloud_manager.subcloud_additional_details(
-            name)
+    def _get_detail(self, name=None):
+        name = name or self.resource_id
+        try:
+            result = \
+                self.connection.subcloud_manager.subcloud_additional_details(
+                    name)
+        except EndpointNotFound:
+            return
         # I am not sure why they return a list here.
         if len(result) == 1:
             return result[0]
         return result
 
     def get_detail(self):
-        self.logger.info('Get Detail Log: resource name {}'.format(
-            self.resource.name))
-        self.logger.info('Get Detail Log: resource name type {}'.format(
-            type(self.resource.name)))
         try:
-            return self._get_detail(self.resource.name)
+            return self._get_detail()
         except APIException as e:
             raise StarlingXException(e)
 
     @property
     def oam_floating_ip(self):
-        resource = self.get_detail()
-        return resource.oam_floating_ip
+        return self.subcloud_detail.oam_floating_ip
 
     def get_oam_floating_ip(self, name):
         resource = self._get_detail(name)
@@ -130,11 +148,18 @@ class SubcloudResource(DistributedCloudResource):
     def to_dict(self):
         return self.get_subcloud_as_dict(self.resource)
 
-    def get_subcloud_group(self, group_id):
+    @property
+    def subcloud_group_detail(self):
+        if not self._subcloud_group_detail:
+            self._subcloud_group_detail = self.get_subcloud_group()
+        return self._subcloud_group_detail
+
+    def get_subcloud_group(self, group_id=None):
+        group_id = group_id or self.resource.group_id
+        # TODO: We should only need to call this one time.
         try:
-            result = \
-                self.connection.subcloud_group_manager.subcloud_group_detail(
-                    group_id)
+            result = self.connection.subcloud_group_manager.\
+                subcloud_group_detail(group_id)
         except EndpointNotFound:
             return None
         # I am not sure why they return a list here.
@@ -143,6 +168,8 @@ class SubcloudResource(DistributedCloudResource):
         return result
 
     def get_subcloud_group_name(self, group_id):
+        if group_id == self.resource.group_id:
+            return self.subcloud_group_detail.name
         subcloud_group = self.get_subcloud_group(group_id)
         if subcloud_group:
             return subcloud_group.name

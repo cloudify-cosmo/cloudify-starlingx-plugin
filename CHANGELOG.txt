@@ -81,3 +81,5 @@
 - Try to handle instance update conflicts.
 0.0.31:
 - Try to handle instance update conflicts.
+0.0.32:
+- Try to minimize subgroup api queries

@@ -22,7 +22,16 @@ from ..resources.distributed_cloud import SubcloudResource
 class StarlingXDistributedCloudTest(StarlingXCommonBase):
 
     @patch('cloudify_starlingx_sdk.resources.distributed_cloud.client')
-    def test_subcloud_resource_instance(self, _):
+    def test_subcloud_resource_instance(self, client):
+        client.client.subcloud_manager.list_subclouds = Mock()
+        client.client.subcloud_manager.subcloud_additional_details = Mock()
+
+        mock_client = Mock()
+        subcloud_manager_mock = Mock()
+        subcloud_manager_mock.list_subclouds = Mock()
+        subcloud_manager_mock.subcloud_additional_details = Mock()
+        mock_client.subcloud_manager.return_value = subcloud_manager_mock
+
         resource = SubcloudResource(
             client_config={'foo': 'foo', 'bar': 'bar'},
             resource_config={

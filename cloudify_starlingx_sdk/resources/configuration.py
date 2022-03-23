@@ -78,6 +78,7 @@ class SystemResource(ConfigurationResource):
         self._host_resources = None
         self._subcloud_resource = None
         self._subcloud_resources = None
+        self._subcloud_resource_names = None
         self._kube_cluster_resources = None
         self._service_parameter_resources = None
 
@@ -184,12 +185,25 @@ class SystemResource(ConfigurationResource):
         return subclouds
 
     @property
+    def subcloud_resource_names(self):
+        names = []
+        if not self._subcloud_resource_names:
+            # TODO: Make parallel
+            # TODO: Here we have two calls per subcloud.
+            for subcloud in self.subclouds:
+                names.append(subcloud.subcloud_id)
+            self._subcloud_resource_names = names
+        return self._subcloud_resource_names
+
+    @property
     def subcloud_resources(self):
         """ This is a list of the subcloud resource objects.
         I.e. interfaces for storing properties in runtime, etc.
         """
         subcloud_resources = []
         if not self._subcloud_resources:
+            # TODO: Make parallel
+            # TODO: Here we have two calls per subcloud.
             for subcloud in self.subclouds:
                 resource = \
                     SubcloudResource(
