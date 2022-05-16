@@ -1,0 +1,177 @@
+plugins:
+
+  starlingx:
+    executor: central_deployment_agent
+    package_name: cloudify-starlingx-plugin
+    package_version: '0.0.32'
+
+blueprint_labels:
+  obj-type: 
+    values: 
+      - starlingx
+
+labels:
+  obj-type: 
+    values: 
+      - starlingx
+
+dsl_definitions:
+
+  client_config: &client_config
+    client_config:
+      type: cloudify.types.starlingx.ClientConfig
+      description: Your StarlingX client configuration.
+      required: false
+
+  # Every resource uses this property unless noted.
+  external_resource: &external_resource
+    use_external_resource:
+      description: Indicate whether the resource exists or if Cloudify should create the resource, true if you are bringing an existing resource, false if you want cloudify to create it.
+      type: boolean
+      default: true
+
+data_types:
+
+  cloudify.types.starlingx.ClientConfig:
+    properties:
+      auth_url:
+        type: string
+        description: Your StarlingX Client Authorization URL.
+        required: false
+      username:
+        type: string
+        description: Your StarlingX username.
+        required: false
+      api_key:
+        type: string
+        description: Your StarlingX api_key.
+        required: false
+      project_name:
+        type: string
+        description: The name of your StarlingX project.
+        required: false
+      tenant_name:
+        type: string
+        description: The name of your StarlingX tenant.
+        required: false
+      region_name:
+        type: string
+        description: The region where you want this particular resource to be created.
+        default: RegionOne
+      user_domain_id:
+        type: string
+        description: The user domain id
+        required: false
+      project_domain_id:
+        type: string
+        description: The Project domain id
+        required: false
+      user_domain_name:
+        description: Domain name to operate on.
+        type: string
+        required: false
+      project_domain_name:
+        description: Project domain name to operate on.
+        type: string
+        required: false
+      insecure:
+        description: If true, SSL validation is skipped.
+        type: boolean
+        required: false
+        default: false
+      cacert:
+        description: Path to CA certificate to validate StarlingX's endpoint with.
+        type: string
+        required: false
+      kwargs:
+        description: >
+          A dictionary of keys and values that is not validated
+          but will override other values in the client config.
+        default: {}
+
+  cloudify.types.starlingx.WRCP:
+    properties:
+      uuid:
+        type: string
+        description: The system unique system UUID. NOT USED. Prefer to use the resource_id node property.
+        default: ''
+      name:
+        type: string
+        description: The human readable name.
+        default: ''
+      description:
+        type: string
+        description: Free text description of the system.
+        default: ''
+      distributed_cloud_role:
+        type: string
+        description: The role of the system in a distributed cloud.
+        default: ''
+      system_type:
+        type: string
+        description: The type of system. Either standard or all-in-one.
+        default: ''
+      system_mode:
+        type: string
+        description: The mode the the system. Either simplex, duplex, or duplex-direct.
+        default: ''
+      location:
+        type: string
+        description: Textual description of the system.
+        default: ''
+      latitude:
+        type: string
+        description: Geo latitude
+        default: ''
+      longitude:
+        type: string
+        description: Geo longitude.
+        default: ''
+
+node_types:
+
+  cloudify.nodes.starlingx.WRCP:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.starlingx.WRCP
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        poststart:
+          implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
+
+workflows:
+
+  discover_subclouds:
+    mapping: starlingx.cloudify_starlingx.workflows.discover.discover_subclouds
+    parameters:
+      node_id:
+        description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
+        type: string
+        default: ''
+      node_instance_id':
+        description: The ID of the specific node instance whose subclouds you wish to discover.
+        type: string
+        default: ''
+
+  discover_and_deploy:
+    mapping: starlingx.cloudify_starlingx.workflows.discover.discover_and_deploy
+    parameters:
+      node_id:
+        description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
+        type: string
+        default: ''
+      node_instance_id':
+        description: The ID of the specific node instance whose subclouds you wish to discover and deploy.
+        type: string
+        default: ''
+      blueprint_id:
+        description: The ID of the blueprint.
+        type: string
+        default: ''
+      deployment_id:
+        description: The ID of the deployment.
+        type: string
+        default: ''
