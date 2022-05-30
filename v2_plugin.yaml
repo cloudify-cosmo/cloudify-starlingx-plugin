@@ -3,17 +3,7 @@ plugins:
   starlingx:
     executor: central_deployment_agent
     package_name: cloudify-starlingx-plugin
-    package_version: '0.0.32'
-
-blueprint_labels:
-  obj-type: 
-    values: 
-      - starlingx
-
-labels:
-  obj-type: 
-    values: 
-      - starlingx
+    package_version: '0.0.33'
 
 dsl_definitions:
 
@@ -149,11 +139,11 @@ workflows:
     parameters:
       node_id:
         description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
-        type: string
+        type: node_id
         default: ''
       node_instance_id':
         description: The ID of the specific node instance whose subclouds you wish to discover.
-        type: string
+        type: node_instance_id
         default: ''
 
   discover_and_deploy:
@@ -161,17 +151,28 @@ workflows:
     parameters:
       node_id:
         description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
-        type: string
+        type: node_id
         default: ''
       node_instance_id':
         description: The ID of the specific node instance whose subclouds you wish to discover and deploy.
-        type: string
+        type: node_instance_id
         default: ''
       blueprint_id:
         description: The ID of the blueprint.
-        type: string
+        type: blueprint_id
         default: ''
       deployment_id:
         description: The ID of the deployment.
-        type: string
+        type: deployment_id
         default: ''
+
+blueprint_labels:
+  obj-type:
+    values:
+      - starlingx
+
+labels:
+  obj-type:
+    values:
+      - starlingx
+

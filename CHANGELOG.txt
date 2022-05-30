@@ -83,3 +83,5 @@
 - Try to handle instance update conflicts.
 0.0.32:
 - Try to minimize subgroup api queries
+0.0.33:
+- V2 Plugin YAML
