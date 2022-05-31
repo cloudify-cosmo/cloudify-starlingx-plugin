@@ -85,4 +85,4 @@
 - Try to minimize subgroup api queries
 0.0.33:
 - V2 Plugin YAML
-0.0.34: Rerelease with new build process
+0.0.34: Rerelease new build process
