@@ -108,3 +108,6 @@ venv.bak/
 
 .DS_Store
 *.wgn
+plugins.json
+v2_plugins.json
+workspace/build
