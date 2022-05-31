@@ -3,7 +3,7 @@ plugins:
   starlingx:
     executor: central_deployment_agent
     package_name: cloudify-starlingx-plugin
-    package_version: '0.0.34'
+    package_version: '0.0.35'
 
 dsl_definitions:
 
