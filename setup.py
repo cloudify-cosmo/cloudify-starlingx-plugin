@@ -43,12 +43,11 @@ setup(
     license="LICENSE",
     description="Represent StarlingX Workloads in Cloudify.",
     install_requires=[
-        'httplib2',
+        'PrettyTable<0.8,>=0.7.2',  # Required by distributedcloud-client
         'distributedcloud-client',
+        'cloudify-common',
         'cgtsclient',
         'httplib2',
-        'cloudify-common',
         'babel',  # Required by distributedcloud-client
-        'PrettyTable<0.8,>=0.7.2',  # Required by distributedcloud-client
     ]
 )
