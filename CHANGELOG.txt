@@ -88,3 +88,4 @@
 0.0.34: Rerelease new build process
 0.0.35: Rerelease with new build process.
 0.0.36: Rerelease with new build process.
+0.0.37: Store subcloud name in subcloud names list instead of subcloud external id.
