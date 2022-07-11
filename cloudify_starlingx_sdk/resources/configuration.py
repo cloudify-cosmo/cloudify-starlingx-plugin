@@ -191,7 +191,7 @@ class SystemResource(ConfigurationResource):
             # TODO: Make parallel
             # TODO: Here we have two calls per subcloud.
             for subcloud in self.subclouds:
-                names.append(subcloud.subcloud_id)
+                names.append(subcloud.name)
             self._subcloud_resource_names = names
         return self._subcloud_resource_names
 
