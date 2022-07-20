@@ -136,34 +136,38 @@ workflows:
 
   discover_subclouds:
     mapping: starlingx.cloudify_starlingx.workflows.discover.discover_subclouds
+    availability_rules:
+      node_instances_active: ['all', 'partial']
     parameters:
       node_id:
         description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
-        type: string
+        type: node_id
         default: ''
       node_instance_id':
         description: The ID of the specific node instance whose subclouds you wish to discover.
-        type: string
+        type: node_instance
         default: ''
 
   discover_and_deploy:
     mapping: starlingx.cloudify_starlingx.workflows.discover.discover_and_deploy
+    availability_rules:
+      node_instances_active: ['all', 'partial']
     parameters:
       node_id:
         description: The name of the node template of the cloudify.nodes.starlingx.System node, whose subclouds you wish to discover.
-        type: string
+        type: node_id
         default: ''
       node_instance_id':
         description: The ID of the specific node instance whose subclouds you wish to discover and deploy.
-        type: string
+        type: node_instance
         default: ''
       blueprint_id:
         description: The ID of the blueprint.
-        type: string
+        type: blueprint_id
         default: ''
       deployment_id:
         description: The ID of the deployment.
-        type: string
+        type: deployment_id
         default: ''
 
 blueprint_labels:
