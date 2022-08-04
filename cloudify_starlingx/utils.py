@@ -339,17 +339,17 @@ def update_runtime_properties(instance,
     :return:
     """
 
+    props = deepcopy(instance.runtime_properties)
+    prop = props.get(prop_name, {})
     for resource in resources:
-        props = deepcopy(instance.runtime_properties)
-        prop = props.get(prop_name, {})
         if resource.resource_id not in prop:
             prop.update(**resource.to_dict())
-        props[prop_name] = prop
-        instance_version = int(instance.version)
-        rest_client.node_instances.update(node_instance_id=instance.id,
-                                          state=instance.state,
-                                          runtime_properties=props,
-                                          version=instance_version)
+    props[prop_name] = prop
+    instance_version = int(instance.version)
+    rest_client.node_instances.update(node_instance_id=instance.id,
+                                      state=instance.state,
+                                      runtime_properties=props,
+                                      version=instance_version)
 
 
 def desecretize_client_config(config):
