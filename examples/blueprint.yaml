@@ -118,6 +118,11 @@ node_templates:
     properties:
       client_config: *client_config
 
+  wrcp_api:
+    type: cloudify.nodes.starlingx.CLIENT_API
+    properties:
+      client_config: *client_config
+
 capabilities:
 
   wrcp-ip:

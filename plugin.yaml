@@ -20,7 +20,15 @@ dsl_definitions:
       type: boolean
       default: true
 
+# Will patch_id property be added to the ClientConfig?
 data_types:
+  cloudify.types.starlingx.ClientConfigDetails:
+    derived_from: cloudify.types.starlingx.ClientConfig
+    properties:
+      patch_id:
+        type: string
+        description:
+        required: true
 
   cloudify.types.starlingx.ClientConfig:
     properties:
@@ -131,6 +139,30 @@ node_types:
       cloudify.interfaces.lifecycle:
         poststart:
           implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
+
+  cloudify.nodes.starlingx.PATCHES_LIST:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type:  cloudify.types.starlingx.ClientConfig
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patches_list
+
+  cloudify.nodes.starlingx.PATCHE_DETAILS:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *external_resource
+      <<: *client_config
+      resource_config:
+        type: cloudify.types.starlingx.ClientConfigDetails
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patches_details
 
 workflows:
 
