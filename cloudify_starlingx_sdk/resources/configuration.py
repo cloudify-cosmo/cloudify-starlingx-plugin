@@ -210,8 +210,10 @@ class SystemResource(ConfigurationResource):
                         client_config=self.client_config,
                         resource_config={'subcloud_id': subcloud.subcloud_id},
                         logger=self.logger)
-                if resource.resource.availability_status.lower() == 'online':
-                    # We only need to include online resources in the list.
+                if resource.resource.availability_status.lower() == 'online' \
+                        and resource.resource.management_state in ['managed']:
+                    # We only need to include online & managed resources in
+                    # the list.
                     subcloud_resources.append(resource)
             self._subcloud_resources = subcloud_resources
         return self._subcloud_resources
@@ -333,7 +335,6 @@ class HostResource(ConfigurationResource):
 
 
 class ApplicationResource(ConfigurationResource):
-
     id_key = 'name'
 
     def list(self):
@@ -352,7 +353,6 @@ class ApplicationResource(ConfigurationResource):
 
 
 class KubeClusterResource(ConfigurationResource):
-
     id_key = 'cluster_name'
 
     def list(self):
@@ -377,7 +377,6 @@ class KubeClusterResource(ConfigurationResource):
 
 
 class ServiceParameterResource(ConfigurationResource):
-
     id_key = 'uuid'
 
     def list(self):
