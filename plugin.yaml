@@ -7,6 +7,12 @@ plugins:
 
 dsl_definitions:
 
+  patch_config: &patch_config
+    patch_config:
+      type: cloudify.types.starlingx.Patch
+      description: Your StarlingX client configuration.
+      required: false
+
   client_config: &client_config
     client_config:
       type: cloudify.types.starlingx.ClientConfig
@@ -144,6 +150,7 @@ node_types:
     properties:
       <<: *external_resource
       <<: *client_config
+      <<: *patch_config
       resource_config:
         type:  cloudify.types.starlingx.ClientConfig
     interfaces:
@@ -156,6 +163,7 @@ node_types:
     properties:
       <<: *external_resource
       <<: *client_config
+      <<: *patch_config
       resource_config:
         type: cloudify.types.starlingx.ClientConfigDetails
     interfaces:
