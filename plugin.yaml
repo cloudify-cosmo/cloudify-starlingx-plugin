@@ -150,7 +150,6 @@ node_types:
     properties:
       <<: *external_resource
       <<: *client_config
-      <<: *patch_config
       resource_config:
         type:  cloudify.types.starlingx.ClientConfig
     interfaces:
@@ -165,7 +164,7 @@ node_types:
       <<: *client_config
       <<: *patch_config
       resource_config:
-        type: cloudify.types.starlingx.ClientConfigDetails
+        type: cloudify.types.starlingx.Patch
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
