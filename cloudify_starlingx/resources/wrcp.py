@@ -42,6 +42,7 @@ def poststart(resource, ctx):
     :return:
     """
 
+    resource.client_config
     if resource.is_subcloud:
         update_subcloud_resource(resource,
                                  ctx.instance,

@@ -168,7 +168,7 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
-          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patches_details
+          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patch_details
 
 workflows:
 
