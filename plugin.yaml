@@ -7,12 +7,6 @@ plugins:
 
 dsl_definitions:
 
-  patch_config: &patch_config
-    patch_config:
-      type: cloudify.types.starlingx.Patch
-      description: Your StarlingX client configuration.
-      required: false
-
   client_config: &client_config
     client_config:
       type: cloudify.types.starlingx.ClientConfig
@@ -130,6 +124,10 @@ data_types:
         type: string
         description: Geo longitude.
         default: ''
+      patch_id:
+        type: string
+        description: Patch ID to get details for.
+        required: false
 
 node_types:
 
@@ -144,31 +142,8 @@ node_types:
       cloudify.interfaces.lifecycle:
         poststart:
           implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
-
-  cloudify.nodes.starlingx.PatchList:
-    derived_from: cloudify.nodes.Root
-    properties:
-      <<: *external_resource
-      <<: *client_config
-      resource_config:
-        type:  cloudify.types.starlingx.ClientConfig
-    interfaces:
-      cloudify.interfaces.lifecycle:
         start:
-          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patches_list
-
-  cloudify.nodes.starlingx.PatchDetails:
-    derived_from: cloudify.nodes.Root
-    properties:
-      <<: *external_resource
-      <<: *client_config
-      <<: *patch_config
-      resource_config:
-        type: cloudify.types.starlingx.Patch
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        start:
-          implementation: starlingx.cloudify_starlingx.resources.client_api.get_patch_details
+          implementation: starlingx.cloudify_starlingx.resources.wrcp.start
 
 workflows:
 

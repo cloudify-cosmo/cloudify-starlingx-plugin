@@ -69,6 +69,9 @@ class ConfigurationResource(StarlingXResource):
     def get(self):
         raise NotImplementedError()
 
+    def patches_list(self):
+        raise NotImplemented()
+
 
 class SystemResource(ConfigurationResource):
     """Class representing Starlingx I-system or "controller" objects."""
@@ -120,6 +123,9 @@ class SystemResource(ConfigurationResource):
         if isinstance(value, str):
             return value.lower()
         return value
+
+    def patches_list(self):
+        pass
 
     @property
     def region_name(self):
