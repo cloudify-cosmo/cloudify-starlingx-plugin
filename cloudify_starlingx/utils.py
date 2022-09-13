@@ -36,6 +36,7 @@ from cloudify_rest_client.exceptions import (
     DeploymentEnvironmentCreationInProgressError)
 from cloudify.constants import NODE_INSTANCE, RELATIONSHIP_INSTANCE
 
+from cloudify_starlingx_sdk.common import StarlingXException
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 CONTROLLER_TYPE = 'cloudify.nodes.starlingx.WRCP'
@@ -343,7 +344,19 @@ def update_runtime_properties(instance,
     prop = props.get(prop_name, {})
     for resource in resources:
         if resource.resource_id not in prop:
-            prop.update(**resource.to_dict())
+            try:
+                prop.update(**resource.to_dict())
+            except (APIException, StarlingXException):
+                try:
+                    ctx.logger.error(
+                        'Failed to get details of subcloud {}.'.format(
+                            resource.resource_id))
+                    raise
+                except Exception:
+                    wtx.logger.error(
+                        'Skipping discovery of subcloud {}.'.format(
+                            resource.resource_id))
+                    continue
     props[prop_name] = prop
     instance_version = int(instance.version)
     rest_client.node_instances.update(node_instance_id=instance.id,
