@@ -95,3 +95,4 @@
 0.0.41:
 - RD-5949 During discovery skip subclouds that the API fails to get details.
 - RD-5949 During install of a subcloud retry when the API fails to get details.
+0.0.42: Same as 0.0.42 just handling general exception.
