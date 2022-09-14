@@ -126,7 +126,7 @@ class SubcloudResource(DistributedCloudResource):
                     name)
         except EndpointNotFound:
             return
-        except APIException as e:
+        except Exception as e:
             if "b''" in str(e):
                 raise StarlingXException(
                     'A failure of an API call to get a data about '
