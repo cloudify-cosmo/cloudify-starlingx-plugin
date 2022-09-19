@@ -15,6 +15,8 @@
 
 from copy import deepcopy
 
+import requests
+
 
 class StarlingXException(Exception):
     pass
@@ -93,3 +95,69 @@ class StarlingXResource(object):
         if not self._resource:
             self._resource = self.get()
         return self._resource
+
+
+class StarlingxPatchClient(object):
+    AVAILABLE_VERSION = 'v1'
+
+    @classmethod
+    def get_for_mock_server(cls):
+        """
+        This method will instantiate StarlingX client for Mock testing.
+        """
+
+        username = ""
+        password = ""
+        url = "http://localhost:8080"
+
+        headers = {
+        }
+
+        return cls(username=username, password=password, url=url, headers=headers)
+
+    def __init__(self, username: str, password: str, url: str, headers: dict):
+        self.connection = None
+        self.username = username
+        self.password = password
+        self.url = url
+        self.headers = headers
+
+    def get_api_version(self) -> str:
+        """
+        This method returns information about supported version
+
+        :rtype: str
+        """
+
+        r = requests.get(url=self.url, headers=self.headers)
+
+        data = r.json()
+
+        return data
+
+    def get_list_of_patches(self) -> list:
+        """
+        This method returns list of available patches.
+
+        :rtype: list
+        """
+
+        endpoint = "{}/{}/query".format(self.url, self.AVAILABLE_VERSION)
+        r = requests.get(url=endpoint, headers=self.headers)
+
+        data = r.json()
+
+        return data
+
+    def get_patch_details(self, patch_id: str) -> dict:
+        """
+        This method returns detailed information about given patch id.
+        """
+
+        endpoint = "{}/{}/show/{}".format(self.url, self.AVAILABLE_VERSION, patch_id)
+
+        r = requests.get(url=endpoint, headers=self.headers)
+
+        data = r.json()
+
+        return data
