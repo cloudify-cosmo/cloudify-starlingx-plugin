@@ -3,10 +3,10 @@ import pytest
 from cloudify_starlingx_sdk.common import StarlingxPatchClient
 
 
-# Those tests should be enable once https://github.com/marcin-cloudify/Cloudify-PS-StarlingxMock is up and running
+# Tests relies on https://github.com/marcin-cloudify/Cloudify-PS-StarlingxMock
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_get_api_version():
     client = StarlingxPatchClient.get_for_mock_server()
     api_version = client.get_api_version()
@@ -14,7 +14,7 @@ def test_get_api_version():
     assert isinstance(api_version, str)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_get_list_of_patches():
     client = StarlingxPatchClient.get_for_mock_server()
     patches_list = client.get_list_of_patches()
@@ -22,7 +22,7 @@ def test_get_list_of_patches():
     assert isinstance(patches_list, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_get_patch_details():
     patch_id = "TS_15.12_PATCH_0005"
     client = StarlingxPatchClient.get_for_mock_server()
@@ -61,7 +61,7 @@ def test_upload_patch():
     assert isinstance(out, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_apply_patch():
     patch_id = "TS_15.12_PATCH_0005"
     client = StarlingxPatchClient.get_for_mock_server()
@@ -69,7 +69,7 @@ def test_apply_patch():
     assert isinstance(out, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_remove_patch():
     patch_id = "TS_15.12_PATCH_0005"
     client = StarlingxPatchClient.get_for_mock_server()
@@ -77,7 +77,7 @@ def test_remove_patch():
     assert isinstance(out, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_delete_patch():
     patch_id = "TS_15.12_PATCH_0005"
     client = StarlingxPatchClient.get_for_mock_server()
@@ -85,14 +85,14 @@ def test_delete_patch():
     assert isinstance(out, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_query_hosts():
     client = StarlingxPatchClient.get_for_mock_server()
     out = client.query_hosts()
     assert isinstance(out, dict)
 
 
-@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+@pytest.mark.skip(reason="Make sure that mock server is running")
 def test_host_install():
     hostname = "super_host"
     client = StarlingxPatchClient.get_for_mock_server()
