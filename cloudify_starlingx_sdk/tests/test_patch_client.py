@@ -29,3 +29,52 @@ def test_get_patch_details():
     assert patch_details['contents'][patch_id][0] == "python-horizon-2013.2.3-r118.x86_64.rpm"
     assert patch_details['error'] == ""
     assert isinstance(patch_details, dict)
+
+# TODO: Need to add it to the Mock endpoints
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_upload_patch():
+    patch = dict()
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.upload_patch(patch=patch)
+    assert isinstance(out, dict)
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_apply_patch():
+    patch_id = "TS_15.12_PATCH_0005"
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.apply_patch(patch_id=patch_id)
+    assert isinstance(out, dict)
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_remove_patch():
+    patch_id = "TS_15.12_PATCH_0005"
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.remove_patch(patch_id=patch_id)
+    assert isinstance(out, dict)
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_delete_patch():
+    patch_id = "TS_15.12_PATCH_0005"
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.delete_patch(patch_id=patch_id)
+    assert isinstance(out, dict)
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_query_hosts():
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.query_hosts()
+    assert isinstance(out, dict)
+
+
+@pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
+def test_host_install():
+    hostname = "super_host"
+    client = StarlingxPatchClient.get_for_mock_server()
+    out = client.host_install(hostname=hostname)
+    assert isinstance(out, dict)
