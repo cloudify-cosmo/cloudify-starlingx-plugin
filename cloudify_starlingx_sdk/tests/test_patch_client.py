@@ -2,6 +2,7 @@ import pytest
 
 from cloudify_starlingx_sdk.common import StarlingxPatchClient
 
+
 # Those tests should be enable once https://github.com/marcin-cloudify/Cloudify-PS-StarlingxMock is up and running
 
 
@@ -30,12 +31,31 @@ def test_get_patch_details():
     assert patch_details['error'] == ""
     assert isinstance(patch_details, dict)
 
-# TODO: Need to add it to the Mock endpoints
-
 
 @pytest.mark.skip(reason="To enable this test, make sure that mock server is running")
 def test_upload_patch():
-    patch = dict()
+    patch = {
+        "contents": {
+            "TS_15.12_PATCH_0002": [
+                "python-horizon-2013.2.3-r118.x86_64.rpm",
+                "sysinv-1.0-r81.x86_64.rpm"
+            ]
+        },
+        "error": "",
+        "metadata": {
+            "TS_15.12_PATCH_0002": {
+                "description": "Fixes the following Issues:\n   compute-4 and storage-0 multiple resets after DOR",
+                "install_instructions": "",
+                "patchstate": "Partial-Remove",
+                "repostate": "Available",
+                "requires": [],
+                "status": "DEV",
+                "summary": "TS_15.12 Patch 0002",
+                "sw_version": "15.12",
+                "warnings": ""
+            }
+        }
+    }
     client = StarlingxPatchClient.get_for_mock_server()
     out = client.upload_patch(patch=patch)
     assert isinstance(out, dict)
