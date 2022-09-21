@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 from copy import deepcopy
 
 import requests
@@ -100,7 +100,8 @@ class StarlingXResource(object):
 class StarlingxPatchClient(object):
     """
     StarlingX Patch API client for specification taken from:
-    https://docs.starlingx.io/api-ref/update/api-ref-patching-v1-update.html?expanded=uploads-a-patch-to-the-patching-system-detail,shows-detailed-information-about-a-specific-patch-detail,deletes-a-patch-that-is-in-the-available-state-detail,removes-a-patch-that-is-in-the-applied-state-detail,applies-a-patch-that-is-in-the-available-state-detail#
+    https://docs.starlingx.io/api-ref/update/api-ref-patching-v1-update.html?expanded=
+    uploads-a-patch-to-the-patching-system-detail,shows-detailed-information-about-a-specific-patch-detail,deletes-a-patch-that-is-in-the-available-state-detail,removes-a-patch-that-is-in-the-applied-state-detail,applies-a-patch-that-is-in-the-available-state-detail#
     """
 
     AVAILABLE_VERSION = 'v1'
@@ -116,6 +117,7 @@ class StarlingxPatchClient(object):
         url = "http://localhost:8080"
 
         headers = {
+            "Content-Type": "application/json; charset=utf-8"
         }
 
         return cls(username=username, password=password, url=url, headers=headers)
@@ -180,7 +182,7 @@ class StarlingxPatchClient(object):
 
         endpoint = "{}/{}/upload".format(self.url, self.AVAILABLE_VERSION)
 
-        r = requests.post(url=endpoint, data=patch, headers=self.headers)
+        r = requests.post(endpoint, data=json.dumps(patch), headers=self.headers, allow_redirects=False)
 
         data = r.json()
 
