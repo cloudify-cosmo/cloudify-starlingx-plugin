@@ -74,8 +74,6 @@ def apply_patch(resource, ctx, patch_id: str):
     dc_patch_client.execute_action_on_strategy(type_of_strategy="patch", action="apply")
 
 
-
-
 @with_rest_client
 @with_starlingx_resource(SystemResource)
 def refresh_status(resource, ctx, rest_client):
