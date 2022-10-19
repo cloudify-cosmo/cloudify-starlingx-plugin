@@ -55,7 +55,7 @@ def with_starlingx_resource(class_decl):
                     client_config=client_config,
                     resource_config=resource_config,
                     logger=ctx.logger)
-                func(resource, ctx)
+                func(resource, **kwargs)
             except StarlingXException as errors:
                 raise OperationRetry(
                     'Attempting WRCP registration again, '

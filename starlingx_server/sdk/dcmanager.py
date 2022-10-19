@@ -318,7 +318,7 @@ class StarlingxDcManagerClient(object):
         marshaled_object = json.dumps(data)
         return self._api_call(api_call_type=requests.patch, url=endpoint, data=marshaled_object, allow_redirects=False)
 
-    def update_statos_for_subcloud(self, subcloud: str, endpoint: str = '', status: str = '') -> dict:
+    def update_status_for_subcloud(self, subcloud: str, endpoint: str = '', status: str = '') -> dict:
         """
         Update the status of a specific subcloud.
 

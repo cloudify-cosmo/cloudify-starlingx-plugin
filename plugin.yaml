@@ -131,6 +131,28 @@ node_types:
       cloudify.interfaces.lifecycle:
         poststart:
           implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
+      cloudify.interfaces.patches:
+        upload:
+          implementation:  starlingx.cloudify_starlingx.resources.patches.upload_patch
+          inputs:
+            autoapply:
+              type: bool
+              default: True
+            refresh_status:
+              type: bool
+              default: True
+            patch_dir:
+              type: string
+        apply:
+          implementation: starlingx.cloudify_starlingx.resources.patches.apply_patch
+          inputs:
+            patch_id:
+              type: string
+        refresh_status:
+          implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status
+        check_status:
+          implementation: starlingx.cloudify_starlingx.resources.patches.check_status
+
 
 workflows:
 
@@ -165,3 +187,39 @@ workflows:
         description: The ID of the deployment.
         type: string
         default: ''
+
+  upload_patch:
+    mapping: default_workflows.cloudify.plugins.workflows.execute_operation
+    parameters:
+      operation:
+        default: cloudify.interfaces.patches.upload
+      operation_kwargs:
+        autoapply:
+          type: bool
+          default: True
+          description: Apply if true
+        refresh_status:
+          type: bool
+          default: True
+        patch_dir:
+          type: string
+
+  apply_patch:
+    mapping: default_workflows.cloudify.plugins.workflows.execute_operation
+    parameters:
+      operation:
+        default: cloudify.interfaces.patches.apply
+        
+
+  refresh_status:
+    mapping: default_workflows.cloudify.plugins.workflows.execute_operation
+    parameters:
+      operation:
+        default: cloudify.interfaces.patches.refresh_status
+  
+  check_status:
+    mapping: default_workflows.cloudify.plugins.workflows.execute_operation
+    parameters:
+      operation:
+        default: cloudify.interfaces.patches.check_status
+    
