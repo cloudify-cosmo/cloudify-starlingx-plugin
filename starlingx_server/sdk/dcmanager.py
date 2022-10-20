@@ -318,13 +318,13 @@ class StarlingxDcManagerClient(object):
         marshaled_object = json.dumps(data)
         return self._api_call(api_call_type=requests.patch, url=endpoint, data=marshaled_object, allow_redirects=False)
 
-    def update_statos_for_subcloud(self, subcloud: str, endpoint: str = '', status: str = '') -> dict:
+    def update_status_for_subcloud(self, subcloud: str, updated_endpoint: str = '', status: str = '') -> dict:
         """
         Update the status of a specific subcloud.
 
         :param subcloud: The content of a file containing the resource definitions describing the desired subcloud
         configuration
-        :param endpoint: The endpoint that is being updated. Only supported value is: dc-cert
+        :param updated_endpoint: The endpoint that is being updated. Only supported value is: dc-cert
         :param status: The endpoint sync status. in-sync, out-of-sync, unknown
 
         :rtype: dict
@@ -332,7 +332,7 @@ class StarlingxDcManagerClient(object):
 
         endpoint = "{}/{}/subclouds/{}/update_status".format(self.url, self.AVAILABLE_VERSION, subcloud)
 
-        if not endpoint:
+        if not updated_endpoint:
             return {
                 'message': "endpoint can not be empty",
                 'error': "True",
@@ -345,7 +345,7 @@ class StarlingxDcManagerClient(object):
             }
 
         data = {
-            'endpoint': endpoint,
+            'endpoint': updated_endpoint,
             'status': status,
         }
 
