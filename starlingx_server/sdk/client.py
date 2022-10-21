@@ -5,7 +5,7 @@ from urllib import response
 import requests
 from requests_toolbelt import MultipartEncoder
 
-from starlingxplugin.sdk.keystone_auth import get_token_from_keystone
+from keystone_auth import get_token_from_keystone
 
 
 class StarlingxPatchClient(object):

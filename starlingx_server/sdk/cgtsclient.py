@@ -10,7 +10,7 @@ from cgtsclient.v1.iservice import iServiceManager
 from cgtsclient.v1.license import LicenseManager
 from cgtsclient.v1.upgrade_shell import _print_upgrade_show
 
-from starlingxplugin.sdk.keystone_auth import get_token_from_keystone
+from keystone_auth import get_token_from_keystone
 
 
 class UpgradeClient(object):

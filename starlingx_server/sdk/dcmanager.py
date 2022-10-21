@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from starlingxplugin.sdk.keystone_auth import get_token_from_keystone
+from keystone_auth import get_token_from_keystone
 
 
 class SubCloudObject(object):
