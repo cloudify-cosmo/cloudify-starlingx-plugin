@@ -13,7 +13,8 @@ from cloudify.exceptions import OperationRetry
 
 
 @with_starlingx_resource(SystemResource)
-def upload_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, **kwargs):
+def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, delete_strategy: bool,
+                           type_of_strategy: str, subcloud_apply_type: str, strategy_action: str, max_parallel_subclouds: int, stop_on_failure: bool, **kwargs):
     """
         Steps:
         1. Upload patch from patch dir
@@ -29,49 +30,33 @@ def upload_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir
     password = client_config.get('api_key')
     project_name = client_config.get('project_name')
     user_domain_id = client_config.get('user_domain_id')
-    project_domain_id = client_config.get('project_domain_id')    
+    project_domain_id = client_config.get('project_domain_id')  
+    subcloud_name =  _get_subcloud_name(ctx=ctx)  
 
-    # ctx.logger.info("""auth_url={},username={},password={},project_name={}, user_domain_id={},
-    # #                                                      project_domain_id={}""".format(res))
-    patch_client = StarlingxPatchClient.get_patch_client(auth_url=auth_url, username=username, password=password,
-                                                         project_name=project_name, user_domain_id=user_domain_id,
-                                                         project_domain_id=project_domain_id)
-    outputs = patch_client.upload_patch(patch_dir=patch_dir)
-
-    if autoapply:
-        for output in outputs:
-            patch_id = re.findall(' \"(.*) is now available', output)
-            apply_patch( ctx=ctx, patch_id=patch_id)
-
-    if refresh_status:
-        refresh_status(ctx=ctx)
-
-
-@with_starlingx_resource(SystemResource)
-def apply_patch(resource, ctx, patch_id: str):
-    client_config = resource.client_config
-    auth_url = client_config.get('auth_url')
-    username = client_config.get('username')
-    password = client_config.get('api_key')
-    project_name = client_config.get('project_name')
-    user_domain_id = client_config.get('user_domain_id')
-    project_domain_id = client_config.get('project_domain_id')    
-    subcloud_name =  _get_subcloud_name(ctx=ctx)
-    # ctx.logger.info("""auth_url={},username={},password={},project_name={}, user_domain_id={},
-    # #                                                      project_domain_id={}""".format(res))
     patch_client = StarlingxPatchClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                          project_name=project_name, user_domain_id=user_domain_id,
                                                          project_domain_id=project_domain_id)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                              project_name=project_name, user_domain_id=user_domain_id,
                                                              project_domain_id=project_domain_id)
-    out = patch_client.apply_patch(patch_id=patch_id)
-    assert out['info'] == '{} has been applied\n'.format(patch_id)
-    #TODO strategy create and apply
-    dc_patch_client.create_subcloud_update_strategy(type_of_strategy="patch", cloud_name=subcloud_name,
-                                                          max_parallel_subclouds=1, stop_on_failure=True,
-                                                          subcloud_apply_type="serial")
-    dc_patch_client.execute_action_on_strategy(type_of_strategy="patch", action="apply")
+
+    outputs = patch_client.upload_patch(patch_dir=patch_dir)
+
+    if autoapply:
+        for output in outputs:
+            patch_id = re.findall(' \"(.*) is now available', output)
+            out = patch_client.apply_patch(patch_id=patch_id)
+            assert out['info'] == '{} has been applied\n'.format(patch_id)
+            dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=subcloud_name,
+                                                            max_parallel_subclouds=max_parallel_subclouds, stop_on_failure=stop_on_failure,
+                                                            subcloud_apply_type=subcloud_apply_type)
+            dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy, action=strategy_action)
+
+    if refresh_status:
+        refresh_status(ctx=ctx)
+
+    if delete_strategy:
+       dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
 
 @with_rest_client
