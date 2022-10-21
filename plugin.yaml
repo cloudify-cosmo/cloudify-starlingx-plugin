@@ -205,7 +205,7 @@ workflows:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
     parameters:
       operation:
-        default: cloudify.interfaces.patches.upload
+        default: starlingx.cloudify_starlingx.resources.patches.upload_and_apply_patch
       operation_kwargs:
         autoapply:
           type: bool
