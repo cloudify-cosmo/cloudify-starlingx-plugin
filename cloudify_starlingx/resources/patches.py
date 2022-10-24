@@ -14,7 +14,8 @@ from cloudify.exceptions import OperationRetry
 
 @with_starlingx_resource(SystemResource)
 def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, delete_strategy: bool,
-                           type_of_strategy: str, subcloud_apply_type: str, strategy_action: str, max_parallel_subclouds: int, stop_on_failure: bool, **kwargs):
+                           type_of_strategy: str, subcloud_apply_type: str, strategy_action: str, max_parallel_subclouds: int,
+                           stop_on_failure: bool, **kwargs):
     """
         Steps:
         1. Upload patch from patch dir
