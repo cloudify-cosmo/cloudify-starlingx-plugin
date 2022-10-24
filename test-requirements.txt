@@ -7,12 +7,14 @@ tox
 -e git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client
 -e git+https://opendev.org/starlingx/config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
 
--e  git+https://github.com/cloudify-cosmo/cloudify-common@master#egg=cloudify-common==7.0.0.dev1
+
+#m
+git+https://github.com/cloudify-cosmo/cloudify-common@master#egg=cloudify-common==6.3.1
 
 nose
 
-setuptools~=40.7.3
+setuptools==40.7.3
 requests
-cloudify~=6.4.0
+cloudify==6.3.1
 keystoneauth1==5.0.0
--e  git+https://github.com/starlingx/config.git@4.0.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
+git+https://github.com/cloudify-incubator/cloudify-utilities-plugins-sdk.git
