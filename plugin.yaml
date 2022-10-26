@@ -161,10 +161,20 @@ node_types:
             stop_on_failure:
               type: bool
               default: True
+            group_name:
+              type: string
+              default: default
         refresh_status:
           implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status
         check_status:
           implementation: starlingx.cloudify_starlingx.resources.patches.check_status
+        upgrade:
+          implementation:  starlingx.cloudify_starlingx.resources.upgrade.upgrade
+          inputs:
+            sw_version:
+              type: bool
+              default: True
+
 
 
 workflows:
@@ -247,3 +257,13 @@ workflows:
       operation:
         default: cloudify.interfaces.patches.check_status
     
+  upgrade:
+    mapping: default_workflows.cloudify.plugins.workflows.execute_operation
+    parameters:
+      operation:
+        default: cloudify.interfaces.patches.upgrade
+      operation_kwargs:
+        sw_version:
+          description: Version of SW to upgrade
+          type: string
+          default: 'WRCP_21.05'

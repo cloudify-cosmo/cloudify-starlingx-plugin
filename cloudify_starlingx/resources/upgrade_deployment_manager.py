@@ -1,8 +1,5 @@
-
-from argparse import Namespace
 import re
 
-from http.client import responses
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
 from cloudify_terminal_sdk.terminal_connection import SmartConnection
@@ -31,7 +28,7 @@ def _run_ssh_command(ip, user, password, port, command='', responses=None, ctx=N
 
 
 @workflow
-def upgrade_service(node_instance_id=None, node_id=None, sw_path=None, sw_version=None, ctx=None, **_):
+def upgrade_deployment_manager(sw_version=None, ctx=None, **_):
     """
         Once you have completed a platform upgrade from Wind River Cloud Platform Release 20.06 to Release 21.05,
         sw_version: WRCP_21.05       
@@ -42,7 +39,7 @@ def upgrade_service(node_instance_id=None, node_id=None, sw_path=None, sw_versio
     inventory='controller-0'
     namespace='platform-deployment-manager'
     pod_name='platform-deployment-manager-0'
-    sw_version = 'WRCP_21.05'
+    # sw_version = 'WRCP_21.05'
     sw_version_short = sw_version.replace('.','')
     registry = 'registry.local:9001'
     manager_repo = '/docker.io/wind-river/cloud-platform-deployment-manager'
@@ -55,7 +52,7 @@ def upgrade_service(node_instance_id=None, node_id=None, sw_path=None, sw_versio
     helm_chart_path = '{}/helm-chart-overrides.yaml'.format(home_path)
     
     # UPGRADE DEPLOYMENT MANAGER
-    _download_wind_river_cloud_platform_deployment(ctx=ctx, sw_version=sw_version, sw_path=sw_path,deployment_manager_file=deployment_manager_file)
+    _provide_the_required_files(ctx=ctx, sw_version=sw_version, deployment_manager_file=deployment_manager_file)
     _upgrade_deployment_manager(ctx=ctx, inventory=inventory, ansible_overrides_file=ansible_overrides_file, user=user, ssh_password=ssh_password,
                                 deployment_manager_fil=deployment_manager_file, ctx=ctx)
     _verify_deployment_manager_upgrade(namespace=namespace, pod_name=pod_name, sw_version=sw_version, ctx=ctx)
@@ -67,11 +64,11 @@ def upgrade_service(node_instance_id=None, node_id=None, sw_path=None, sw_versio
                                    sw_version=sw_version, helm_chart_path=helm_chart_path,
                                    deployment_manager_tgz_file=deployment_manager_tgz_file,
                                    registry=registry, manager_repo=manager_repo, rbac_proxy_image=rbac_proxy_image)
-    #_upgrading_the_subcloud(ctx, deployment_manager_file, deployment_manager_tgz_file, helm_chart_path)
+    # Upgrading the Subcloud
     _upgrading_the_subcloud(ctx, deployment_manager_file, deployment_manager_tgz_file, helm_chart_path, new_subcloud_password=None)
 
 
-def _download_wind_river_cloud_platform_deployment(sw_version, sw_path, deployment_manager_file, ctx=None):
+def _provide_the_required_files(sw_version, deployment_manager_file, ctx=None):
     """
         download
         https://github.com/Wind-River/cloud-platform-deployment-manager/blob/master/docs/playbooks/wind-river-cloud-platform-deployment-manager.yaml

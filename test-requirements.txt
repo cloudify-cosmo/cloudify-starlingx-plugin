@@ -17,4 +17,5 @@ setuptools==40.7.3
 requests
 cloudify==6.3.1
 keystoneauth1==5.0.0
+re
 git+https://github.com/cloudify-incubator/cloudify-utilities-plugins-sdk.git
