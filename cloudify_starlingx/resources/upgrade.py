@@ -12,15 +12,25 @@ from cloudify_starlingx_sdk.resources.configuration import SystemResource
 
 
 @with_starlingx_resource(SystemResource)
-def upgrade(sw_version=None, ctx=None, **_):
-    upgrade_client = UpgradeClient.get_upgrade_client(auth_url='', username='', password='')
+def upgrade(resource, sw_version=None, license_file_path='', ctx=None, **_):
+    client_config = resource.client_config
+    auth_url = client_config.get('auth_url')
+    username = client_config.get('username')
+    password = client_config.get('api_key')
+    project_name = client_config.get('project_name')
+    user_domain_id = client_config.get('user_domain_id')
+    project_domain_id = client_config.get('project_domain_id')
+
+    upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username , password=password,
+                                                      project_name=project_name, user_domain_id=user_domain_id,
+                                                      project_domain_id=project_domain_id)
 
     # Upgrade steps
 
     # Make sure we are connected to controller-0
 
     # 1. Install license for new release
-    upgrade_client.apply_license(license_file_path='')
+    upgrade_client.apply_license(license_file_path=license_file_path)
 
     # 2. Upload ISO and SIG files to controller-0
     upgrade_client.upload_iso_and_sig_files(iso_path='', sig_path='', active='true', local='true')
@@ -107,7 +117,7 @@ def upgrade(sw_version=None, ctx=None, **_):
     upgrade_client.do_upgrade_complete()
 
     # 22. Upgrade Deployment Manager
-    upgrade_deployment_manager()
+    upgrade_deployment_manager(sw_version=sw_version)
 
     # 23. Upgrade subclouds (same as patch, just different strategy type)
 
