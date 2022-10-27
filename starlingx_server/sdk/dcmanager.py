@@ -62,19 +62,20 @@ class StarlingxDcManagerClient(object):
         return cls(url=all_endpoints[DC_MANAGER_API_URL], headers=headers)
 
     @classmethod
-    def get_for_mock_server(cls):
+    def get_for_mock_server(cls, keystone_password: str):
         """
         This method will instantiate StarlingX client for Mock testing.
         """
-        username = ""
-        password = ""
-        url = "http://localhost:8080"
+        url = "http://localhost:8119"
 
+        token = get_token_from_keystone(auth_url='http://localhost:5000/v3', username='admin',
+                                        password=keystone_password)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
-            "X-Auth-Token": "secret_auth_token"
+            "X-Auth-Token": token
         }
 
+        o = get_endpoints(auth_url='http://localhost:5000/v3', headers=headers)
         return cls(url=url, headers=headers)
 
     def __init__(self, url: str, headers: dict):

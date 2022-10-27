@@ -41,15 +41,18 @@ class StarlingxPatchClient(object):
         return cls(url=all_endpoints[PATCHING_API_URL], headers=headers)
 
     @classmethod
-    def get_for_mock_server(cls):
+    def get_for_mock_server(cls, keystone_password: str):
         """
         This method will instantiate StarlingX client for Mock testing.
-        """
-        url = "http://localhost:8080"
 
+        :type keystone_password: Password for the keystone admin user
+        """
+        url = "http://localhost:15491"
+
+        token = get_token_from_keystone(auth_url='http://localhost:5000/v3', username='admin', password=keystone_password)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
-            "X-Auth-Token": "secret_auth_token"
+            "X-Auth-Token": token
         }
 
         return cls(url=url, headers=headers)
