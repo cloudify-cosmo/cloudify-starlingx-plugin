@@ -49,13 +49,13 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
             patch_id = re.findall(' \"(.*) is now available', output)
             try:
                 state = patch_client.get_patch_details(patch_id=patch_id)["metadata"][patch_id]["patchstate"]
+                if state.lower() in 'applied':
+                    ctx.logger.warning('{} patch already applied'.format(patch_id))
+                    continue
             except AttributeError:
-                ctx.logger.error('{} is not applied'.format(patch_id))
+                ctx.logger.error('{} is not uploaded'.format(patch_id))
                 raise NonRecoverableError
-            if state.lower() in 'applied':
-                ctx.logger.warning('{} patch already applied'.format(patch_id))
-                continue
-                
+
             out = patch_client.apply_patch(patch_id=patch_id)
             assert out['info'] == '{} has been applied\n'.format(patch_id)
         
