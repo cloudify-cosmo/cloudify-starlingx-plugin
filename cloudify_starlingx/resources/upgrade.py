@@ -9,7 +9,7 @@ from upgrade_deployment_manager import upgrade_deployment_manager
 
 from ..decorators import with_starlingx_resource
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
-
+from ...starlingx_server.sdk.keystone_auth import DC_MANAGER_API_URL
 
 @with_starlingx_resource(SystemResource)
 def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_path='', ctx=None, **_):
@@ -24,46 +24,17 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     host_runtime_properties = ctx.instance.runtime_properties.get('hosts', {})
     controlers_list = [v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "controller"]
     workers_list = [v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"]
+    storage_list = [v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"]
 
-    upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username , password=password,
+    upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username , password=password, endpoint_type=DC_MANAGER_API_URL,
                                                       project_name=project_name, user_domain_id=user_domain_id,
                                                       project_domain_id=project_domain_id)
 
     # Upgrade steps
-
-
-
-    # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
-
-    # 16.1 Get sorage nodes list
-    upgrade_client.do_host_list(column='', format='')
-
-    # 16.2 Lock storage node
-    upgrade_client.do_host_swact(hostname_or_id='', force=True)
-
-    # 16.3 Verify that storage node is locked
-    upgrade_client.do_host_show(hostname_or_id='', column='', format='')
-
-    # 16.4 Upgrade system storage
-    upgrade_client.do_host_upgrade(host_id='', force=True)
-
-    # 16.5 Unlock storage node
-    upgrade_client.do_host_unlock(hostname_or_id='', force=True)
-
-    # 17. Upgrade worker nodes - repeat for each worker node
-
-    # 17.1 Get worker node list
-    upgrade_client.do_host_list(column='', format='')
-
-    # 17.2 lock worker node
-    upgrade_client.do_host_swact(hostname_or_id='', force=True)
-
-    # 17.3 Upgrade worker node
-    upgrade_client.do_host_upgrade(host_id='', force=True)
-
-    # 17.4 Unlock worker node
-    upgrade_client.do_host_unlock(hostname_or_id='', force=True)
-
+    _upgrade_controlers(upgrade_client, controlers_list, license_file_path, iso_path, sig_path)
+    _upgrade_storage_node(upgrade_client, storage_list)
+    _upgrade_worker_nodes(upgrade_client, workers_list)
+    
     # 18 Set controller-1 as active
     upgrade_client.do_host_swact(hostname_or_id='', force=True)
 
@@ -150,3 +121,35 @@ def _upgrade_controlers(upgrade_client, controlers_list, license_file_path, iso_
 
     # 15. Unlock Controller-0
     upgrade_client.do_host_unlock(hostname_or_id='', force=True)
+
+
+def _upgrade_storage_node(upgrade_client, storage_node_list=None):
+    # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
+
+    # # 16.1 Get sorage nodes list
+    # upgrade_client.do_host_list(column='', format='')
+    for host in storage_node_list:
+        # 16.2 Lock storage node
+        upgrade_client.do_host_lock(hostname_or_id=host, force=True)
+        # 16.3 Verify that storage node is locked
+        upgrade_client.do_host_show(hostname_or_id=host, column='', format='')
+        # 16.4 Upgrade system storage
+        upgrade_client.do_host_upgrade(host_id=host, force=True)
+        # 16.5 Unlock storage node
+        upgrade_client.do_host_unlock(hostname_or_id=host, force=True)
+
+
+def _upgrade_worker_nodes(upgrade_client, workers_list):
+        # 17. Upgrade worker nodes - repeat for each worker node
+
+    # # 17.1 Get worker node list
+    # upgrade_client.do_host_list(column='', format='')
+
+    # 17.2 lock worker node
+    for host in workers_list:
+        upgrade_client.do_host_lock(hostname_or_id=host, force=True)
+        # 17.3 Upgrade worker node
+        upgrade_client.do_host_upgrade(host_id='', force=True)
+        # 17.4 Unlock worker node
+        upgrade_client.do_host_unlock(hostname_or_id='', force=True)
+

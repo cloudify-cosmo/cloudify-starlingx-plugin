@@ -1,5 +1,9 @@
+import requests
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
+
+DC_MANAGER_API_URL = 'dcmanager_url'
+PATCHING_API_URL = 'patch_url'
 
 
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
@@ -27,3 +31,31 @@ def get_token_from_keystone(auth_url: str, username: str, password: str, project
 
     return token
 
+
+def get_endpoints(auth_url: str, headers: dict) -> dict:
+    """
+    Returns API URLS for DcManager and Patch API.
+
+    :param auth_url: Keystone auth url
+    :param headers: Header containing token
+
+    :rtype: dict
+    """
+    url = '{}/auth/catalog'.format(auth_url)
+    endpoints = requests.get(url=url, headers=headers)
+    all_endpoints = {}
+
+    for entity in endpoints.json()['catalog']:
+        if entity['type'] == 'dcmanager':
+            for endpoint in entity['endpoints']:
+                if endpoint['interface'] == 'public':
+                    all_endpoints[DC_MANAGER_API_URL] = endpoint['url']
+                    break
+
+        if entity['type'] == 'patching':
+            for endpoint in entity['endpoints']:
+                if endpoint['interface'] == 'public':
+                    all_endpoints[PATCHING_API_URL] = endpoint['url']
+                    break
+
+    return all_endpoints

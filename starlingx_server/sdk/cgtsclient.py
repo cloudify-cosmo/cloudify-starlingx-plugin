@@ -1,10 +1,10 @@
 from email import utils
 from typing import Any
 
-from cgtsclient.common import constants, utils
-from cgtsclient.v1 import ihost as ihost_utils
 from cgtsclient import exc
 from cgtsclient.client import get_client
+from cgtsclient.common import constants, utils
+from cgtsclient.v1 import ihost as ihost_utils
 from cgtsclient.v1.iHost_shell import _print_ihost_show
 from cgtsclient.v1.iservice import iServiceManager
 from cgtsclient.v1.license import LicenseManager
@@ -12,11 +12,14 @@ from cgtsclient.v1.upgrade_shell import _print_upgrade_show
 
 from keystone_auth import get_token_from_keystone
 
+import pylint
 
 class UpgradeClient(object):
     @classmethod
-    def get_upgrade_client(cls, auth_url: str, username: str, password: str, project_name: str = 'admin',
-                         user_domain_id: str = 'default', project_domain_id: str = 'default'):
+    def get_upgrade_client(cls, auth_url: str, username: str, password: str, endpoint_type: str = '',
+                           region_name: str = 'local',
+                           global_request_id: str = '', insecure: bool = False, project_name: str = 'admin',
+                           user_domain_id: str = 'default', project_domain_id: str = 'default'):
         """
         Instantiate API client together with gathering token from Keystone.
 
@@ -26,16 +29,25 @@ class UpgradeClient(object):
         :param project_name: Project name for Keystone
         :param user_domain_id: User domain ID for Keystone
         :param project_domain_id: Project domain ID for Keystone
+        :param project_name:
+        :param user_domain_id:
+        :param global_request_id:
+        :param region_name:
+        :param endpoint_type:
+        :param insecure:
         """
 
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
                                         project_name=project_name, user_domain_id=user_domain_id,
                                         project_domain_id=project_domain_id)
 
-        return cls(token=token)
+        return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
+                   global_request_id=global_request_id,
+                   insecure=insecure)
 
-    def __init__(self, token: str):
-        self.client = get_client(api_version=1, os_auth_token=token)
+    def __init__(self, token: str, endpoint_type: str, region_name: str, global_request_id: str, insecure=False):
+        self.client = get_client(api_version=1, os_auth_token=token, os_endpoint_type=endpoint_type,
+                                 os_region_name=region_name, global_request_id=global_request_id, insecure=insecure)
 
     def apply_license(self, license_file_path: str) -> Any:
         """

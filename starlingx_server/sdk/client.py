@@ -1,11 +1,9 @@
-import json
 import os
-from urllib import response
 
 import requests
 from requests_toolbelt import MultipartEncoder
 
-from keystone_auth import get_token_from_keystone
+from starlingxplugin.sdk.keystone_auth import get_token_from_keystone, get_endpoints, PATCHING_API_URL
 
 
 class StarlingxPatchClient(object):
@@ -18,12 +16,11 @@ class StarlingxPatchClient(object):
     AVAILABLE_VERSION = 'v1'
 
     @classmethod
-    def get_patch_client(cls, api_url: str, auth_url: str, username: str, password: str, project_name: str = 'admin',
+    def get_patch_client(cls, auth_url: str, username: str, password: str, project_name: str = 'admin',
                          user_domain_id: str = 'default', project_domain_id: str = 'default'):
         """
         Instantiate API client together with gathering token from Keystone.
 
-        :param api_url: URL for the Windriver API
         :param auth_url: URL for Keystone
         :param username: Username for Keystone
         :param password: Password for Keystone
@@ -40,7 +37,8 @@ class StarlingxPatchClient(object):
             "X-Auth-Token": token
         }
 
-        return cls(url=api_url, headers=headers)
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
+        return cls(url=all_endpoints[PATCHING_API_URL], headers=headers)
 
     @classmethod
     def get_for_mock_server(cls):
@@ -103,7 +101,7 @@ class StarlingxPatchClient(object):
 
         :rtype: str
         """
-        return self._api_call(api_call_type=requests.get)
+        return self._api_call(api_call_type=requests.get, is_json=False)
 
     def get_list_of_patches(self) -> dict:
         """

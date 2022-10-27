@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from keystone_auth import get_token_from_keystone
+from starlingxplugin.sdk.keystone_auth import get_token_from_keystone, get_endpoints, DC_MANAGER_API_URL
 
 
 class SubCloudObject(object):
@@ -37,12 +37,11 @@ class StarlingxDcManagerClient(object):
     AVAILABLE_VERSION = 'v1.0'
 
     @classmethod
-    def get_patch_client(cls, api_url: str, auth_url: str, username: str, password: str, project_name: str = 'admin',
+    def get_patch_client(cls, auth_url: str, username: str, password: str, project_name: str = 'admin',
                          user_domain_id: str = 'default', project_domain_id: str = 'default'):
         """
         Instantiate API client together with gathering token from Keystone.
 
-        :param api_url: URL for the Windriver API
         :param auth_url: URL for Keystone
         :param username: Username for Keystone
         :param password: Password for Keystone
@@ -59,7 +58,8 @@ class StarlingxDcManagerClient(object):
             "X-Auth-Token": token
         }
 
-        return cls(url=api_url, headers=headers)
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
+        return cls(url=all_endpoints[DC_MANAGER_API_URL], headers=headers)
 
     @classmethod
     def get_for_mock_server(cls):
@@ -116,7 +116,10 @@ class StarlingxDcManagerClient(object):
 
         if check_status:
             response.raise_for_status()
-        return response.json() if is_json else response.text
+        try:
+            return response.json() if is_json else response.text
+        except:
+            return response.text
 
     def get_api_version(self) -> str:
         """
@@ -517,7 +520,7 @@ class StarlingxDcManagerClient(object):
         return self._api_call(api_call_type=requests.get, url=endpoint)
 
     def create_subcloud_update_strategy(self, type_of_strategy: str, cloud_name: str, max_parallel_subclouds: int,
-                                        stop_on_failure: bool, subcloud_apply_type: str) -> dict:
+                                        stop_on_failure: str, subcloud_apply_type: str) -> dict:
         """
         Creates the update strategy.
 
@@ -539,14 +542,17 @@ class StarlingxDcManagerClient(object):
             }
 
         # TODO: Documentation mismatch, doc states that this param should be in path, example that in body
-        if type_of_strategy:
-            endpoint = "{}/{}/sw-update-strategy/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
-        else:
-            endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
-
+        # if type_of_strategy:
+        #     endpoint = "{}/{}/sw-update-strategy/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
+        # else:
+        #     endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
+        endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         data = {
             'cloud_name': cloud_name,
         }
+
+        if type_of_strategy:
+            data.update({'type': type_of_strategy})
 
         if max_parallel_subclouds:
             data.update({'max-parallel-subclouds': max_parallel_subclouds})
@@ -598,13 +604,10 @@ class StarlingxDcManagerClient(object):
                 'error': "True",
             }
 
-        if type_of_strategy:
-            endpoint = "{}/{}/sw-update-strategy/action/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
-        else:
-            endpoint = "{}/{}/sw-update-strategy/action".format(self.url, self.AVAILABLE_VERSION)
-
+        endpoint = "{}/{}/sw-update-strategy/actions".format(self.url, self.AVAILABLE_VERSION)
         data = {
             'action': action,
+            'type': type_of_strategy,
         }
 
         marshaled_object = json.dumps(data)
