@@ -125,7 +125,6 @@ def _upgrade_controlers(upgrade_client, controlers_list, license_file_path, iso_
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
-
     # # 16.1 Get sorage nodes list
     # upgrade_client.do_host_list(column='', format='')
     for host in storage_node_list:
@@ -140,13 +139,11 @@ def _upgrade_storage_node(upgrade_client, storage_node_list=None):
 
 
 def _upgrade_worker_nodes(upgrade_client, workers_list):
-        # 17. Upgrade worker nodes - repeat for each worker node
-
+    # 17. Upgrade worker nodes - repeat for each worker node
     # # 17.1 Get worker node list
-    # upgrade_client.do_host_list(column='', format='')
-
-    # 17.2 lock worker node
+    # upgrade_client.do_host_list(column='', format='')  
     for host in workers_list:
+        # 17.2 lock worker node
         upgrade_client.do_host_lock(hostname_or_id=host, force=True)
         # 17.3 Upgrade worker node
         upgrade_client.do_host_upgrade(host_id='', force=True)
