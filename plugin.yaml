@@ -177,7 +177,30 @@ node_types:
             license_file_path:
               type: string
               default: ''
-
+            iso_path:
+              type: string
+              default: ''
+            type_of_strategy:
+              type: string
+              default: upgrade
+            subcloud_apply_type:
+              type: string
+              default: serial
+            strategy_action:
+              type: string
+              default: upgrade
+            max_parallel_subclouds:
+              type: int
+              default: 1
+            stop_on_failure:
+              type: bool
+              default: True
+            group_name:
+              type: string
+              default: default
+            force_flag:
+              type: bool
+              default: True
 
 
 workflows:
@@ -267,10 +290,34 @@ workflows:
         default: cloudify.interfaces.patches.upgrade
       operation_kwargs:
         sw_version:
-          description: Version of SW to upgrade
-          type: string
-          default: 'WRCP_21.05'
+          type: bool
+          default: True
         license_file_path:
           type: string
           default: ''
+        iso_path:
+          type: string
+          default: ''
+        type_of_strategy:
+          type: string
+          default: upgrade
+        subcloud_apply_type:
+          type: string
+          default: serial
+        strategy_action:
+          type: string
+          default: upgrade
+        max_parallel_subclouds:
+          type: int
+          default: 1
+        stop_on_failure:
+          type: bool
+          default: True
+        group_name:
+          type: string
+          default: default
+        force_flag:
+          type: bool
+          default: True
+
 
