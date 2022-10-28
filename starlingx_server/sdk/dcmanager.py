@@ -75,7 +75,6 @@ class StarlingxDcManagerClient(object):
             "X-Auth-Token": token
         }
 
-        o = get_endpoints(auth_url='http://localhost:5000/v3', headers=headers)
         return cls(url=url, headers=headers)
 
     def __init__(self, url: str, headers: dict):
@@ -83,7 +82,7 @@ class StarlingxDcManagerClient(object):
         self.url = url
         self.headers = headers
 
-    def _api_call(self, api_call_type: requests, url='', headers=None, check_status=False, is_json=True, **kwargs):
+    def _api_call(self, api_call_type: requests, url='', headers=None, **kwargs):
         """
             General method to execute requests call
             :params - https://requests.readthedocs.io/en/latest/api/
@@ -115,12 +114,10 @@ class StarlingxDcManagerClient(object):
                 'error': "True",
             }
 
-        if check_status:
-            response.raise_for_status()
         try:
-            return response.json() if is_json else response.text
+            return response.json(), response.status_code
         except:
-            return response.text
+            return response.text, response.status_code
 
     def get_api_version(self) -> str:
         """
@@ -542,11 +539,6 @@ class StarlingxDcManagerClient(object):
                 'error': "True",
             }
 
-        # TODO: Documentation mismatch, doc states that this param should be in path, example that in body
-        # if type_of_strategy:
-        #     endpoint = "{}/{}/sw-update-strategy/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
-        # else:
-        #     endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         data = {
             'cloud_name': cloud_name,

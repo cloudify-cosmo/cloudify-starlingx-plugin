@@ -6,7 +6,7 @@ from keystoneauth1 import session
 
 DC_MANAGER_API_URL = 'dcmanager_url'
 PATCHING_API_URL = 'patch_url'
-
+SYSINV_API_URL = 'sysinv_url'
 
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
                             user_domain_id: str = 'default', project_domain_id: str = 'default') -> str:
@@ -58,6 +58,12 @@ def get_endpoints(auth_url: str, headers: dict) -> dict:
             for endpoint in entity['endpoints']:
                 if endpoint['interface'] == 'public':
                     all_endpoints[PATCHING_API_URL] = endpoint['url']
+                    break
+
+        if entity['type'] == 'sysinv':
+            for endpoint in entity['endpoints']:
+                if endpoint['interface'] == 'public':
+                    all_endpoints[SYSINV_API_URL] = endpoint['url']
                     break
 
     return all_endpoints
