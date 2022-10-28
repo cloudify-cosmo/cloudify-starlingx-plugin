@@ -63,8 +63,8 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
         dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=group_name,
-                                                            max_parallel_subclouds=max_parallel_subclouds, stop_on_failure=stop_on_failure,
-                                                            subcloud_apply_type=subcloud_apply_type)
+                                                        max_parallel_subclouds=max_parallel_subclouds, stop_on_failure=stop_on_failure,
+                                                        subcloud_apply_type=subcloud_apply_type)
         dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy, action=strategy_action)
 
     if refresh_status:

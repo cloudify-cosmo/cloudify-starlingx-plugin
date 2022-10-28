@@ -10,7 +10,7 @@ from cgtsclient.v1.iservice import iServiceManager
 from cgtsclient.v1.license import LicenseManager
 from cgtsclient.v1.upgrade_shell import _print_upgrade_show
 
-from starlingxplugin.sdk.keystone_auth import get_token_from_keystone, get_endpoints, SYSINV_API_URL
+from ..sdk.keystone_auth import get_token_from_keystone, get_endpoints, SYSINV_API_URL
 
 
 class UpgradeClient(object):
@@ -287,3 +287,22 @@ class UpgradeClient(object):
             raise exc.CommandError('Upgrade not found')
 
         _print_upgrade_show(upgrade)
+    
+    def get_system_upgrade_health(self):
+        """
+            get system health: system health-query-upgrade
+        """
+        return self.client.health.get_upgrade()
+    
+    def get_load_list(self):
+        """
+        system load-list
+        """
+        return self.client.load.list()
+    
+    def delete_load(self, load_id):
+        """
+        system load-delete 1
+        """
+        return self.client.load.delete(load_id)
+
