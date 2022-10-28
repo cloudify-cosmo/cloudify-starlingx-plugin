@@ -41,29 +41,25 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                              project_name=project_name, user_domain_id=user_domain_id,
                                                              project_domain_id=project_domain_id)
-    patches = patch_client.get_list_of_patches()
-    outputs = patch_client.upload_patch(patch_dir=patch_dir)
+    outputs, _code = patch_client.upload_patch(patch_dir=patch_dir)
 
     if autoapply:
         for output in outputs:
             patch_id = re.findall(' \"(.*) is now available', output)
-            try:
-                state = patch_client.get_patch_details(patch_id=patch_id)["metadata"][patch_id]["patchstate"]
-                if state.lower() in 'applied':
-                    ctx.logger.warning('{} patch already applied'.format(patch_id))
-                    continue
-            except AttributeError:
+            resp, _code = patch_client.get_patch_details(patch_id=patch_id)
+            if _code >= 300:
                 ctx.logger.error('{} is not uploaded'.format(patch_id))
                 raise NonRecoverableError
+            state = resp["metadata"][patch_id]["patchstate"]
+            if state.lower() in 'applied':
+                ctx.logger.warning('{} patch already applied'.format(patch_id))
+                continue                
 
-            out = patch_client.apply_patch(patch_id=patch_id)
-            assert out['info'] == '{} has been applied\n'.format(patch_id)
+            resp, _code = patch_client.apply_patch(patch_id=patch_id)
+            assert resp['info'] == '{} has been applied\n'.format(patch_id)
         
-        try:
-            dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
-        except AttributeError:
-            pass
-        else:
+        resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
+        if _code < 300:
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
         dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=group_name,
@@ -103,7 +99,8 @@ def _get_status(resource, ctx):
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                              project_name=project_name, user_domain_id=user_domain_id,
                                                              project_domain_id=project_domain_id)
-    return dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)["state"]
+    resp, _ = dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)
+    return resp["state"]
 
 
 @with_starlingx_resource(SystemResource)
