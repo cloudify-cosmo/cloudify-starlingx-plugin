@@ -143,6 +143,7 @@ node_types:
               default: True
             patch_dir:
               type: string
+              default: ''
             delete_strategy:
               type: boolean
               default: True
@@ -243,33 +244,34 @@ workflows:
       operation:
         default: cloudify.interfaces.patches.upload_and_apply
       operation_kwargs:
-        autoapply:
-          type: boolean
-          default: True
-        refresh_status:
-          type: boolean
-          default: True
-        patch_dir:
-          type: string
-          default: ''
-        delete_strategy:
-          type: boolean
-          default: True
-        type_of_strategy:
-          type: string
-          default: patch
-        subcloud_apply_type:
-          type: string
-          default: patch
-        strategy_action:
-          type: string
-          default: apply
-        max_parallel_subclouds:
-          type: integer
-          default: 1
-        stop_on_failure:
-          type: boolean
-          default: True
+        default:
+          autoapply:
+            type: boolean
+            default: True
+          refresh_status:
+            type: boolean
+            default: True
+          patch_dir:
+            type: string
+            default: ''
+          delete_strategy:
+            type: boolean
+            default: True
+          type_of_strategy:
+            type: string
+            default: patch
+          subcloud_apply_type:
+            type: string
+            default: patch
+          strategy_action:
+            type: string
+            default: apply
+          max_parallel_subclouds:
+            type: integer
+            default: 1
+          stop_on_failure:
+            type: boolean
+            default: True
 
   refresh_status:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
@@ -289,35 +291,36 @@ workflows:
       operation:
         default: cloudify.interfaces.patches.upgrade
       operation_kwargs:
-        sw_version:
-          type: boolean
-          default: True
-        license_file_path:
-          type: string
-          default: ''
-        iso_path:
-          type: string
-          default: ''
-        type_of_strategy:
-          type: string
-          default: upgrade
-        subcloud_apply_type:
-          type: string
-          default: serial
-        strategy_action:
-          type: string
-          default: upgrade
-        max_parallel_subclouds:
-          type: integer
-          default: 1
-        stop_on_failure:
-          type: boolean
-          default: True
-        group_name:
-          type: string
-          default: default
-        force_flag:
-          type: boolean
-          default: True
+        default:
+          sw_version:
+            type: boolean
+            default: True
+          license_file_path:
+            type: string
+            default: ''
+          iso_path:
+            type: string
+            default: ''
+          type_of_strategy:
+            type: string
+            default: upgrade
+          subcloud_apply_type:
+            type: string
+            default: serial
+          strategy_action:
+            type: string
+            default: upgrade
+          max_parallel_subclouds:
+            type: integer
+            default: 1
+          stop_on_failure:
+            type: boolean
+            default: True
+          group_name:
+            type: string
+            default: default
+          force_flag:
+            type: boolean
+            default: True
 
 
