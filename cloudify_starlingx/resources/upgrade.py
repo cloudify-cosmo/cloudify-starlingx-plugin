@@ -1,3 +1,5 @@
+import re
+
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
 from cloudify_terminal_sdk.terminal_connection import SmartConnection
@@ -37,7 +39,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
                                                             project_domain_id=project_domain_id)
 
     # Upgrade steps
-    _upgrade_controlers(upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
+    _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
     _upgrade_storage_node(upgrade_client, storage_list, force_flag)
     _upgrade_worker_nodes(upgrade_client, workers_list, force_flag)
     _finish_upgrade(upgrade_client, controllers_list, force_flag)
@@ -62,7 +64,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
 
-def _upgrade_controlers(upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
+def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
     # Make sure we are connected to controller-0
     # 1. Install license for new release
     if len(controllers_list)<=1:
@@ -71,24 +73,28 @@ def _upgrade_controlers(upgrade_client, controllers_list, license_file_path, iso
         # 2. Upload ISO and SIG files to controller-0
         upgrade_client.upload_iso_and_sig_files(iso_path=iso_path, sig_path=sig_path, active='true', local='true')
         health_status = upgrade_client.get_system_upgrade_health()
-        #TODO verify
+        status = True if re.findall('NOK', health_status) else False
+        if status:
+            ctx.logger.error('Health is NOK.\n{}'.format(health_status))
+            raise NonRecoverableError
         upgrade_client.do_upgrade_start(force=force_flag)
         # 4. Verify that upgrade has started
         upgrade_client.do_upgrade_show()
         # 5. Lock controller-1
-        upgrade_client.do_host_lock(hostname_or_id=controller1, force=force_flag)
+        upgrade_client.do_host_lock(hostname_or_id=controller, force=force_flag)
         # 6. Upgrade controller-1
-        upgrade_client.do_host_upgrade(host_id=controller1, force=force_flag)
+        upgrade_client.do_host_upgrade(host_id=controller, force=force_flag)
         # 7. Check upgrade status
         upgrade_client.do_upgrade_show()
         # 8. Unlock controller-1
-        upgrade_client.do_host_unlock(hostname_or_id=controller1 , force=force_flag)
-        _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller1)
+        upgrade_client.do_host_unlock(hostname_or_id=controller , force=force_flag)
+        _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller)
     else:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
         active_controler = _get_active_controller()
         if controller0!=active_controler:
+            ctx.logger.error('ACTIVE Controller is diffrent than expected.\n Current active node: {}'.format(active_controler))
             raise NonRecoverableError
         upgrade_client.apply_license(license_file_path=license_file_path)
         # 2. Upload ISO and SIG files to controller-0
