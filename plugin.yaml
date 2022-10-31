@@ -136,15 +136,15 @@ node_types:
           implementation:  starlingx.cloudify_starlingx.resources.patches.upload_and_apply_patch
           inputs:
             autoapply:
-              type: bool
+              type: boolean
               default: True
             refresh_status:
-              type: bool
+              type: boolean
               default: True
             patch_dir:
               type: string
             delete_strategy:
-              type: bool
+              type: boolean
               default: True
             type_of_strategy:
               type: string
@@ -156,10 +156,10 @@ node_types:
               type: string
               default: apply
             max_parallel_subclouds:
-              type: int
+              type: integer
               default: 1
             stop_on_failure:
-              type: bool
+              type: boolean
               default: True
             group_name:
               type: string
@@ -172,7 +172,7 @@ node_types:
           implementation:  starlingx.cloudify_starlingx.resources.upgrade.upgrade
           inputs:
             sw_version:
-              type: bool
+              type: boolean
               default: True
             license_file_path:
               type: string
@@ -190,16 +190,16 @@ node_types:
               type: string
               default: upgrade
             max_parallel_subclouds:
-              type: int
+              type: integer
               default: 1
             stop_on_failure:
-              type: bool
+              type: boolean
               default: True
             group_name:
               type: string
               default: default
             force_flag:
-              type: bool
+              type: boolean
               default: True
 
 
@@ -244,16 +244,16 @@ workflows:
         default: cloudify.interfaces.patches.upload_and_apply
       operation_kwargs:
         autoapply:
-          type: bool
+          type: boolean
           default: True
         refresh_status:
-          type: bool
+          type: boolean
           default: True
         patch_dir:
           type: string
           default: ''
         delete_strategy:
-          type: bool
+          type: boolean
           default: True
         type_of_strategy:
           type: string
@@ -265,10 +265,10 @@ workflows:
           type: string
           default: apply
         max_parallel_subclouds:
-          type: int
+          type: integer
           default: 1
         stop_on_failure:
-          type: bool
+          type: boolean
           default: True
 
   refresh_status:
@@ -290,7 +290,7 @@ workflows:
         default: cloudify.interfaces.patches.upgrade
       operation_kwargs:
         sw_version:
-          type: bool
+          type: boolean
           default: True
         license_file_path:
           type: string
@@ -308,16 +308,16 @@ workflows:
           type: string
           default: upgrade
         max_parallel_subclouds:
-          type: int
+          type: integer
           default: 1
         stop_on_failure:
-          type: bool
+          type: boolean
           default: True
         group_name:
           type: string
           default: default
         force_flag:
-          type: bool
+          type: boolean
           default: True
 
 

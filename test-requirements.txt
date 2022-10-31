@@ -4,12 +4,13 @@ pylint
 pytest
 tox
 
--e git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client
--e git+https://opendev.org/starlingx/config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
+-e "git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client"
+# -e "git+https://opendev.org/starlingx/config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client"
+-e "git+https://github.com/starlingx/config.git@7.0.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client"
 
 
 #m
-git+https://github.com/cloudify-cosmo/cloudify-common@master#egg=cloudify-common==6.3.1
+-e "git+https://github.com/cloudify-cosmo/cloudify-common@master#egg=cloudify-common==6.3.1"
 
 nose
 
@@ -18,4 +19,4 @@ requests
 cloudify==6.3.1
 keystoneauth1==5.0.0
 re
-git+https://github.com/cloudify-incubator/cloudify-utilities-plugins-sdk.git
+cloudify-utilities-plugins-sdk>=0.0.61
