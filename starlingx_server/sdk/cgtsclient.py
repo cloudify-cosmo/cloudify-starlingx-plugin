@@ -68,8 +68,9 @@ class UpgradeClient(object):
         :rtype: Any
         """
 
-        license_manager = LicenseManager(api=self.client)
-        license_manager.install_license(file=license_file_path)
+        # license_manager = LicenseManager(api=self.client)
+        # license_manager.install_license(file=license_file_path)
+        self.client.license.install_license(file=license_file_path)
 
     def upload_iso_and_sig_files(self, iso_path, sig_path, active='true', local='true'):
         """
