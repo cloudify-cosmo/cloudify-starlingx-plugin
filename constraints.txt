@@ -7,7 +7,10 @@ pylint
 pytest
 tox
 
--e "git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client"
+# -e "git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client==4.0.0.0rc1.dev58&subdirectory=distributedcloud-client"
+# -e "git+https://opendev.org/starlingx/distcloud-client.git@04a577afbf0ed2da7b8b994be3ddda71fed5bdb5#egg=distributedcloud-client===4.0.0.0rc1.dev58&subdirectory=distributedcloud-client"
+distributedcloud_client-4.0.0.0rc1.dev58-py3-none-any.whl
+
 -e "git+https://github.com/starlingx/config.git@7.0.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client"
 
 #m
@@ -19,5 +22,4 @@ setuptools==40.7.3
 requests
 cloudify==6.3.1
 keystoneauth1==5.0.0
-re
 cloudify-utilities-plugins-sdk>=0.0.61
