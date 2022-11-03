@@ -2,17 +2,15 @@ import re
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
-from cloudify_terminal_sdk.terminal_connection import SmartConnection
 from cloudify.exceptions import NonRecoverableError
 
-from ...starlingx_server.sdk.cgtsclient import UpgradeClient
-from ...starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
-from ...starlingx_server.sdk.client import StarlingxPatchClient
+from starlingx_server.sdk.cgtsclient import UpgradeClient
+from starlingx_server.sdk.client import StarlingxPatchClient
 from upgrade_deployment_manager import upgrade_deployment_manager
 
 from ..decorators import with_starlingx_resource
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
-from ...starlingx_server.sdk.keystone_auth import DC_MANAGER_API_URL
+from starlingx_server.sdk.keystone_auth import DC_MANAGER_API_URL
 
 @with_starlingx_resource(SystemResource)
 def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_path='', type_of_strategy="upgrade", subcloud_apply_type='serial',

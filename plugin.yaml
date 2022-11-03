@@ -243,6 +243,16 @@ workflows:
     parameters:
       operation:
         default: cloudify.interfaces.patches.upload_and_apply
+      run_by_dependency_order:
+        default: true
+      type_names:
+        default: []
+      node_ids:
+        default: []
+      node_instance_ids:
+        default: []
+      allow_kwargs_override:
+        default: true
       operation_kwargs:
         default:
           autoapply:
@@ -278,18 +288,48 @@ workflows:
     parameters:
       operation:
         default: cloudify.interfaces.patches.refresh_status
+      run_by_dependency_order:
+        default: true
+      type_names:
+        default: []
+      node_ids:
+        default: []
+      node_instance_ids:
+        default: []
+      allow_kwargs_override:
+        default: true
   
   check_status:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
     parameters:
       operation:
         default: cloudify.interfaces.patches.check_status
+      run_by_dependency_order:
+        default: true
+      type_names:
+        default: []
+      node_ids:
+        default: []
+      node_instance_ids:
+        default: []
+      allow_kwargs_override:
+        default: true
     
   upgrade:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
     parameters:
       operation:
         default: cloudify.interfaces.patches.upgrade
+      run_by_dependency_order:
+        default: true
+      type_names:
+        default: []
+      node_ids:
+        default: []
+      node_instance_ids:
+        default: []
+      allow_kwargs_override:
+        default: true
       operation_kwargs:
         default:
           sw_version:
@@ -322,5 +362,6 @@ workflows:
           force_flag:
             type: boolean
             default: True
+      
 
 

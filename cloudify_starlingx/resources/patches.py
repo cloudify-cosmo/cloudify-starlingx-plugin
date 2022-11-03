@@ -5,8 +5,8 @@ from ..utils import (
     with_rest_client,
     add_new_label)
 from ..decorators import with_starlingx_resource
-from ...starlingx_server.sdk.client import StarlingxPatchClient
-from ...starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
+from starlingx_server.sdk.client import StarlingxPatchClient
+from starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
 
 from cloudify.exceptions import NonRecoverableError
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
