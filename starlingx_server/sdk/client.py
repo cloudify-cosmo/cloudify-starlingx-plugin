@@ -3,7 +3,7 @@ import os
 import requests
 from requests_toolbelt import MultipartEncoder
 
-from starlingxplugin.sdk.keystone_auth import get_token_from_keystone, get_endpoints, PATCHING_API_URL
+from sdk.keystone_auth import get_token_from_keystone, get_endpoints, PATCHING_API_URL
 
 
 class StarlingxPatchClient(object):
