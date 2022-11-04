@@ -17,7 +17,8 @@ class StarlingxPatchClient(object):
 
     @classmethod
     def get_patch_client(cls, auth_url: str, username: str, password: str, project_name: str = 'admin',
-                         user_domain_id: str = 'default', project_domain_id: str = 'default'):
+                         user_domain_name: str = None, project_domain_name: str = None,
+                         user_domain_id: str = None, project_domain_id: str = None):
         """
         Instantiate API client together with gathering token from Keystone.
 
@@ -25,13 +26,16 @@ class StarlingxPatchClient(object):
         :param username: Username for Keystone
         :param password: Password for Keystone
         :param project_name: Project name for Keystone
+        :param user_domain_name: User domain name for Keystone
+        :param project_domain_name: Project domain Name for Keystone
         :param user_domain_id: User domain ID for Keystone
         :param project_domain_id: Project domain ID for Keystone
         """
 
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
-                                        project_name=project_name, user_domain_id=user_domain_id,
-                                        project_domain_id=project_domain_id)
+                                        project_name=project_name,
+                                        project_domain_name=project_domain_name, user_domain_name=user_domain_name,
+                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token

@@ -166,7 +166,7 @@ node_types:
               type: string
               default: default
         refresh_status:
-          implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status
+          implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status_action
         check_status:
           implementation: starlingx.cloudify_starlingx.resources.patches.check_status
         upgrade:

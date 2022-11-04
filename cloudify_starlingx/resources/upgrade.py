@@ -5,37 +5,50 @@ from cloudify.workflows import ctx as wtx
 from cloudify.exceptions import NonRecoverableError
 
 from starlingx_server.sdk.cgtsclient import UpgradeClient
-from starlingx_server.sdk.client import StarlingxPatchClient
+from starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
 from upgrade_deployment_manager import upgrade_deployment_manager
 
 from ..decorators import with_starlingx_resource
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 from starlingx_server.sdk.keystone_auth import DC_MANAGER_API_URL
 
+
 @with_starlingx_resource(SystemResource)
-def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_path='', type_of_strategy="upgrade", subcloud_apply_type='serial',
-            strategy_action='', max_parallel_subclouds=1, stop_on_failure=True, group_name='', force_flag=True, ctx=None):
+def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_path='', type_of_strategy="upgrade",
+            subcloud_apply_type='serial', strategy_action='', max_parallel_subclouds=1, stop_on_failure=True,
+            group_name='', force_flag=True, ctx=None):
     client_config = resource.client_config
-    auth_url = client_config.get('auth_url')
-    username = client_config.get('username')
-    password = client_config.get('api_key')
-    project_name = client_config.get('project_name')
-    user_domain_id = client_config.get('user_domain_id')
-    project_domain_id = client_config.get('project_domain_id')
+    auth_url = client_config.get('os_auth_url')
+    username = client_config.get('os_username')
+    password = client_config.get('os_password')
+    project_name = client_config.get('os_project_name')
+    user_domain_name = client_config.get('os_user_domain_name', None)
+    project_domain_name = client_config.get('os_project_domain_name', None)
+    user_domain_id = client_config.get('os_user_domain_id', None)
+    project_domain_id = client_config.get('os_project_domain_id', None)
+
+    # : {'os_auth_url': 'http://[2620:10A:A001:A103::1065]:5000/v3', 'os_username': 'admin', 'os_project_name': 'admin',
+    #    'os_region_name': 'RegionOne', 'os_user_domain_name': 'Default', 'os_project_domain_name': 'Default',
+    #    'os_password': 'Li69nux*', 'api_version': 1}
 
     host_runtime_properties = ctx.instance.runtime_properties.get('hosts', {})
     controllers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "controller"])
     workers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"])
     storage_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"])
 
-    upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username , password=password, endpoint_type=DC_MANAGER_API_URL,
-                                                      project_name=project_name, user_domain_id=user_domain_id,
+    upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username, password=password,
+                                                      endpoint_type=DC_MANAGER_API_URL, project_name=project_name,
+                                                      user_domain_name=user_domain_name,
+                                                      project_domain_name=project_domain_name,
+                                                      user_domain_id=user_domain_id,
                                                       project_domain_id=project_domain_id)
-    
-    dc_patch_client = StarlingxPatchClient.get_patch_client(auth_url=auth_url, username=username, password=password,
-                                                            project_name=project_name, user_domain_id=user_domain_id,
-                                                            project_domain_id=project_domain_id)
 
+    dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
+                                                                project_name=project_name,
+                                                                user_domain_name=user_domain_name,
+                                                                project_domain_name=project_domain_name,
+                                                                user_domain_id=user_domain_id,
+                                                                project_domain_id=project_domain_id)
     # Upgrade steps
     _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
     _upgrade_storage_node(upgrade_client, storage_list, force_flag)
@@ -48,8 +61,11 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
     if _code<300:
         dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
-    dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=group_name,max_parallel_subclouds=max_parallel_subclouds,
-                                                    stop_on_failure=stop_on_failure, subcloud_apply_type=subcloud_apply_type)
+    dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
+                                                    cloud_name=group_name,
+                                                    max_parallel_subclouds=max_parallel_subclouds,
+                                                    stop_on_failure=stop_on_failure,
+                                                    subcloud_apply_type=subcloud_apply_type)
 
     # 23.1 Apply upgrade strategy
     dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy, action=strategy_action)

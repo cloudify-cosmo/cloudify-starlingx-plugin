@@ -15,32 +15,36 @@ from cloudify.exceptions import OperationRetry
 
 @with_starlingx_resource(SystemResource)
 def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, delete_strategy: bool,
-                           type_of_strategy: str, subcloud_apply_type: str, strategy_action: str, max_parallel_subclouds: int,
-                           stop_on_failure: bool, group_name: str, **kwargs):
+                           type_of_strategy: str, subcloud_apply_type: str, strategy_action: str,
+                           max_parallel_subclouds: int, stop_on_failure: bool, group_name: str, **kwargs):
     """
         Steps:
         1. Upload patch from patch dir
         2. Apply patch (optional)
         3. Check status (optional)
-        :param autoapply: make patch apply
-        :param patch_dir: patch directory
-        :param refresh_status: refresh status of subcloud
     """
     client_config = resource.client_config
-    auth_url = client_config.get('auth_url')
-    username = client_config.get('username')
-    password = client_config.get('api_key')
-    project_name = client_config.get('project_name')
-    user_domain_id = client_config.get('user_domain_id')
-    project_domain_id = client_config.get('project_domain_id')  
- 
+    auth_url = client_config.get('os_auth_url')
+    username = client_config.get('os_username')
+    password = client_config.get('os_password')
+    project_name = client_config.get('os_project_name')
+    user_domain_name = client_config.get('os_user_domain_name', None)
+    project_domain_name = client_config.get('os_project_domain_name', None)
+    user_domain_id = client_config.get('os_user_domain_id', None)
+    project_domain_id = client_config.get('os_project_domain_id', None)
 
     patch_client = StarlingxPatchClient.get_patch_client(auth_url=auth_url, username=username, password=password,
-                                                         project_name=project_name, user_domain_id=user_domain_id,
+                                                         project_name=project_name,
+                                                         user_domain_name=user_domain_name,
+                                                         project_domain_name=project_domain_name,
+                                                         user_domain_id=user_domain_id,
                                                          project_domain_id=project_domain_id)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
-                                                             project_name=project_name, user_domain_id=user_domain_id,
-                                                             project_domain_id=project_domain_id)
+                                                                project_name=project_name,
+                                                                user_domain_name=user_domain_name,
+                                                                project_domain_name=project_domain_name,
+                                                                user_domain_id=user_domain_id,
+                                                                project_domain_id=project_domain_id)
     outputs, _code = patch_client.upload_patch(patch_dir=patch_dir)
 
     if autoapply:
@@ -63,12 +67,13 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
         dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=group_name,
-                                                        max_parallel_subclouds=max_parallel_subclouds, stop_on_failure=stop_on_failure,
+                                                        max_parallel_subclouds=max_parallel_subclouds,
+                                                        stop_on_failure=stop_on_failure,
                                                         subcloud_apply_type=subcloud_apply_type)
         dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy, action=strategy_action)
 
     if refresh_status:
-        refresh_status(ctx=ctx)
+        refresh_status_action(ctx=ctx)
 
     if delete_strategy:
         dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
@@ -76,7 +81,7 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
 
 @with_rest_client
 @with_starlingx_resource(SystemResource)
-def refresh_status(resource, ctx, rest_client):
+def refresh_status_action(resource, ctx, rest_client):
     deployment_id = ctx.deployment.id
     child_deployment_ids =  get_child_deployments(deployment_id)
     for child_deployment_id in child_deployment_ids:
@@ -89,16 +94,21 @@ def refresh_status(resource, ctx, rest_client):
 
 def _get_status(resource, ctx):
     client_config = resource.client_config
-    auth_url = client_config.get('auth_url')
-    username = client_config.get('username')
-    password = client_config.get('api_key')
-    project_name = client_config.get('project_name')
-    user_domain_id = client_config.get('user_domain_id')
-    project_domain_id = client_config.get('project_domain_id')    
-    subcloud_name =  _get_subcloud_name(ctx=ctx)
+    auth_url = client_config.get('os_auth_url')
+    username = client_config.get('os_username')
+    password = client_config.get('os_password')
+    project_name = client_config.get('os_project_name')
+    user_domain_name = client_config.get('os_user_domain_name', None)
+    project_domain_name = client_config.get('os_project_domain_name', None)
+    user_domain_id = client_config.get('os_user_domain_id', None)
+    project_domain_id = client_config.get('os_project_domain_id', None)
+    subcloud_name = _get_subcloud_name(ctx=ctx)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
-                                                             project_name=project_name, user_domain_id=user_domain_id,
-                                                             project_domain_id=project_domain_id)
+                                                                project_name=project_name,
+                                                                user_domain_name=user_domain_name,
+                                                                project_domain_name=project_domain_name,
+                                                                user_domain_id=user_domain_id,
+                                                                project_domain_id=project_domain_id)
     resp, _ = dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)
     return resp["state"]
 
@@ -119,6 +129,7 @@ def check_status(resource, ctx):
 def _get_subcloud_name(ctx):
     subcloud_dict = ctx.instance.runtime_properties.get('subcloud', {})
     return str(list(subcloud_dict.items())[0][1]['name'])
+
 
 def _get_subclouds_names(ctx):
     subcloud_dict = ctx.instance.runtime_properties.get('subclouds', {})

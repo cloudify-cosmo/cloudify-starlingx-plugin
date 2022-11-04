@@ -10,13 +10,16 @@ SYSINV_API_URL = 'sysinv_url'
 
 
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
-                            user_domain_id: str = 'default', project_domain_id: str = 'default') -> str:
+                            user_domain_name: str = None, project_domain_name: str = None,
+                            user_domain_id: str = None, project_domain_id: str = None) -> str:
     """
     This function return keystone token.
     :param auth_url: Keystone url
     :param username: Keystone username
     :param password: Keystone password
     :param project_name: Keystone project
+    :param user_domain_name: User domain name
+    :param project_domain_name: Project domain name
     :param user_domain_id: User domain id
     :param project_domain_id: Project domain id
 
@@ -26,6 +29,8 @@ def get_token_from_keystone(auth_url: str, username: str, password: str, project
                        username=username,
                        password=password,
                        project_name=project_name,
+                       user_domain_name=user_domain_name,
+                       project_domain_name=project_domain_name,
                        user_domain_id=user_domain_id,
                        project_domain_id=project_domain_id)
 
