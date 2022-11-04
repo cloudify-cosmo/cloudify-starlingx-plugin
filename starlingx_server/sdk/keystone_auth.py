@@ -8,6 +8,7 @@ DC_MANAGER_API_URL = 'dcmanager_url'
 PATCHING_API_URL = 'patch_url'
 SYSINV_API_URL = 'sysinv_url'
 
+
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
                             user_domain_id: str = 'default', project_domain_id: str = 'default') -> str:
     """

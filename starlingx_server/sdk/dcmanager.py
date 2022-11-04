@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from keystone_auth import get_token_from_keystone, get_endpoints, DC_MANAGER_API_URL
+from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endpoints, DC_MANAGER_API_URL
 
 
 class SubCloudObject(object):
