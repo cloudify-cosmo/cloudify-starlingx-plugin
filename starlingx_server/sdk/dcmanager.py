@@ -94,30 +94,7 @@ class StarlingxDcManagerClient(object):
         """
         url = url or self.url
         headers = headers or self.headers
-
-        try:
-            response = api_call_type(url=url, headers=headers, **kwargs)
-        except requests.exceptions.HTTPError as e:
-            return {
-                'message': "Http Error: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.ConnectionError as e:
-            return {
-                'message': "Error Connecting: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.Timeout as e:
-            return {
-                'message': "Timeout Error: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                'message': "Unsupported error: {}".format(e),
-                'error': "True",
-            }
-
+        response = api_call_type(url=url, headers=headers, **kwargs)
         try:
             return response.json(), response.status_code
         except:

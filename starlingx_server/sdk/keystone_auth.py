@@ -8,6 +8,8 @@ DC_MANAGER_API_URL = 'dcmanager_url'
 PATCHING_API_URL = 'patch_url'
 SYSINV_API_URL = 'sysinv_url'
 
+CHECKERS = ['/', '/v1.0', '/v1']
+
 
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
                             user_domain_name: str = None, project_domain_name: str = None,
@@ -57,19 +59,31 @@ def get_endpoints(auth_url: str, headers: dict) -> dict:
         if entity['type'] == 'dcmanager':
             for endpoint in entity['endpoints']:
                 if endpoint['interface'] == 'public':
-                    all_endpoints[DC_MANAGER_API_URL] = endpoint['url']
+                    endpoint = endpoint['url']
+                    for checker in CHECKERS:
+                        if endpoint.endswith(checker):
+                            endpoint = endpoint[:-len(checker)]
+                    all_endpoints[DC_MANAGER_API_URL] = endpoint
                     break
 
         if entity['type'] == 'patching':
             for endpoint in entity['endpoints']:
                 if endpoint['interface'] == 'public':
-                    all_endpoints[PATCHING_API_URL] = endpoint['url']
+                    endpoint = endpoint['url']
+                    for checker in CHECKERS:
+                        if endpoint.endswith(checker):
+                            endpoint = endpoint[:-len(checker)]
+                    all_endpoints[PATCHING_API_URL] = endpoint
                     break
 
         if entity['type'] == 'sysinv':
             for endpoint in entity['endpoints']:
                 if endpoint['interface'] == 'public':
-                    all_endpoints[SYSINV_API_URL] = endpoint['url']
+                    endpoint = endpoint['url']
+                    for checker in CHECKERS:
+                        if endpoint.endswith(checker):
+                            endpoint = endpoint[:-len(checker)]
+                    all_endpoints[SYSINV_API_URL] = endpoint
                     break
 
     return all_endpoints

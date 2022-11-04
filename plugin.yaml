@@ -255,33 +255,15 @@ workflows:
         default: true
       operation_kwargs:
         default:
-          autoapply:
-            type: boolean
-            default: True
-          refresh_status:
-            type: boolean
-            default: True
-          patch_dir:
-            type: string
-            default: ''
-          delete_strategy:
-            type: boolean
-            default: True
-          type_of_strategy:
-            type: string
-            default: patch
-          subcloud_apply_type:
-            type: string
-            default: patch
-          strategy_action:
-            type: string
-            default: apply
-          max_parallel_subclouds:
-            type: integer
-            default: 1
-          stop_on_failure:
-            type: boolean
-            default: True
+          autoapply: True
+          refresh_status: True
+          patch_dir: ''
+          delete_strategy: True
+          type_of_strategy: patch
+          subcloud_apply_type: patch
+          strategy_action: apply
+          max_parallel_subclouds: 1
+          stop_on_failure: True
 
   refresh_status:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
@@ -332,36 +314,16 @@ workflows:
         default: true
       operation_kwargs:
         default:
-          sw_version:
-            type: boolean
-            default: True
-          license_file_path:
-            type: string
-            default: ''
-          iso_path:
-            type: string
-            default: ''
-          type_of_strategy:
-            type: string
-            default: upgrade
-          subcloud_apply_type:
-            type: string
-            default: serial
-          strategy_action:
-            type: string
-            default: upgrade
-          max_parallel_subclouds:
-            type: integer
-            default: 1
-          stop_on_failure:
-            type: boolean
-            default: True
-          group_name:
-            type: string
-            default: default
-          force_flag:
-            type: boolean
-            default: True
+          sw_version: True
+          license_file_path: ''
+          iso_path: ''
+          type_of_strategy: upgrade
+          subcloud_apply_type: serial
+          strategy_action: upgrade
+          max_parallel_subclouds: 1
+          stop_on_failure: True
+          group_name: default
+          force_flag: True
       
 
 

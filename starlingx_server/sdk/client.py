@@ -66,7 +66,7 @@ class StarlingxPatchClient(object):
         self.url = url
         self.headers = headers
 
-    def _api_call(self, api_call_type: requests, url='', headers=None, check_status=False, is_json=True, **kwargs):
+    def _api_call(self, api_call_type: requests, url='', headers=None, **kwargs):
         """
             General method to execute requests call
             :params - https://requests.readthedocs.io/en/latest/api/ 
@@ -74,33 +74,11 @@ class StarlingxPatchClient(object):
         """
         url = url or self.url
         headers = headers or self.headers
-
+        response = api_call_type(url=url, headers=headers, **kwargs)
         try:
-            response = api_call_type(url=url, headers=headers, **kwargs)
-        except requests.exceptions.HTTPError as e:
-            return {
-                'message': "Http Error: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.ConnectionError as e:
-            return {
-                'message': "Error Connecting: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.Timeout as e:
-            return {
-                'message': "Timeout Error: {}".format(e),
-                'error': "True",
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                'message': "Unsupported error: {}".format(e),
-                'error': "True",
-            }
-
-        if check_status:
-            response.raise_for_status()
-        return response.json() if is_json else response.text
+            return response.json(), response.status_code
+        except:
+            return response.text, response.status_code
 
     def get_api_version(self) -> str:
         """
@@ -108,7 +86,7 @@ class StarlingxPatchClient(object):
 
         :rtype: str
         """
-        return self._api_call(api_call_type=requests.get, is_json=False)
+        return self._api_call(api_call_type=requests.get)
 
     def get_list_of_patches(self) -> dict:
         """

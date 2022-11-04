@@ -45,11 +45,18 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
                                                                 project_domain_name=project_domain_name,
                                                                 user_domain_id=user_domain_id,
                                                                 project_domain_id=project_domain_id)
-    outputs, _code = patch_client.upload_patch(patch_dir=patch_dir)
+    outputs = patch_client.upload_patch(patch_dir=patch_dir)
 
     if autoapply:
-        for output in outputs:
-            patch_id = re.findall(' \"(.*) is now available', output)
+        for output, _code in outputs:
+            if _code != 200:
+                ctx.logger.error('{}'.format(output))
+                raise NonRecoverableError
+            if dict(output)['error']:
+                ctx.logger.error('{}'.format(output))
+                raise NonRecoverableError
+            patch_id = re.findall('(.*) is', dict(output)['info'])[-1]
+            ctx.logger.info('PATCH ID: {}'.format(patch_id))
             resp, _code = patch_client.get_patch_details(patch_id=patch_id)
             if _code >= 300:
                 ctx.logger.error('{} is not uploaded'.format(patch_id))
