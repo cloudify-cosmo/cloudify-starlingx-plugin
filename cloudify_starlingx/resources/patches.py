@@ -67,17 +67,28 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
                 continue                
 
             resp, _code = patch_client.apply_patch(patch_id=patch_id)
+            if resp.get('error', ''):
+                ctx.logger.error('Apply patch error: {}'.format(resp.get('error', '')))
+                raise NonRecoverableError
+            if resp.get('warning', ''):
+                ctx.logger.warning('Apply patch warn: {}'.format(resp.get('warning', '')))
+
             assert resp['info'] == '{} has been applied\n'.format(patch_id)
         
         resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
+        ctx.logger.info('Strategy exist?: {}'.format(resp))
         if _code < 300:
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
-        dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy, cloud_name=group_name,
-                                                        max_parallel_subclouds=max_parallel_subclouds,
-                                                        stop_on_failure=stop_on_failure,
-                                                        subcloud_apply_type=subcloud_apply_type)
-        dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy, action=strategy_action)
+        resp, _code = dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
+                                                                      cloud_name=group_name,
+                                                                      max_parallel_subclouds=max_parallel_subclouds,
+                                                                      stop_on_failure=stop_on_failure,
+                                                                      subcloud_apply_type=subcloud_apply_type)
+        ctx.logger.info('Create subcloud update strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
+        resp, _code = dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy,
+                                                                 action=strategy_action)
+        ctx.logger.info('Action on strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
 
     if refresh_status:
         refresh_status_action(ctx=ctx)
@@ -88,14 +99,15 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
 
 @with_rest_client
 @with_starlingx_resource(SystemResource)
-def refresh_status_action(resource, ctx, rest_client):
+def refresh_status_action(resource, ctx):
+    rest_client = resource.resource_config
     deployment_id = ctx.deployment.id
-    child_deployment_ids =  get_child_deployments(deployment_id)
+    child_deployment_ids = get_child_deployments(deployment_id=deployment_id)
     for child_deployment_id in child_deployment_ids:
         rest_client.executions.start(
             deployment_id=child_deployment_id,
             workflow_id='check_status',
-            queue=False
+            queue=True
         )
 
 

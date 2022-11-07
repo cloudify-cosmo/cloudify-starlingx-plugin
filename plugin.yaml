@@ -296,7 +296,9 @@ workflows:
         default: []
       allow_kwargs_override:
         default: true
-    
+      operation_kwargs:
+        default: { }
+
   upgrade:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
     parameters:
