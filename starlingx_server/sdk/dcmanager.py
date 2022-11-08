@@ -485,25 +485,20 @@ class StarlingxDcManagerClient(object):
         return self._api_call(api_call_type=requests.get, url=endpoint)
 
     # Subcloud Update Strategy
-    def get_subcloud_update_strategy(self, type_of_strategy: str) -> dict:
+    def get_subcloud_update_strategy(self) -> dict:
         """
         The Subcloud update strategy is configurable.
 
-        :param type_of_strategy: Filter to query a particular type of update strategy if it exists. One of: firmware,
         kube-rootca-update, kubernetes, patch, prestage, or upgrade
 
         :rtype: dict
         """
-
-        if type_of_strategy:
-            endpoint = "{}/{}/sw-update-strategy/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
-        else:
-            endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
-
+        endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         return self._api_call(api_call_type=requests.get, url=endpoint)
 
-    def create_subcloud_update_strategy(self, type_of_strategy: str, cloud_name: str, max_parallel_subclouds: int,
-                                        stop_on_failure: str, subcloud_apply_type: str) -> dict:
+    def create_subcloud_update_strategy(self, type_of_strategy: str = None, cloud_name: str = None,
+                                        max_parallel_subclouds: int = None, stop_on_failure: str = None,
+                                        subcloud_apply_type: str = None) -> dict:
         """
         Creates the update strategy.
 
@@ -517,17 +512,10 @@ class StarlingxDcManagerClient(object):
 
         :rtype: dict
         """
-
-        if not cloud_name:
-            return {
-                'message': "cloud_name can not be empty",
-                'error': "True",
-            }
-
+        data = {}
         endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
-        data = {
-            'cloud_name': cloud_name,
-        }
+        if cloud_name:
+            data.update({'cloud_name': cloud_name})
 
         if type_of_strategy:
             data.update({'type': type_of_strategy})
@@ -544,7 +532,7 @@ class StarlingxDcManagerClient(object):
         marshaled_object = json.dumps(data)
         return self._api_call(api_call_type=requests.post, url=endpoint, data=marshaled_object)
 
-    def delete_update_strategy(self, type_of_strategy: str) -> dict:
+    def delete_update_strategy(self) -> dict:
 
         """
         Deletes strategy.
@@ -555,21 +543,14 @@ class StarlingxDcManagerClient(object):
         :rtype: dict
         """
 
-        if not type_of_strategy:
-            return {
-                'message': "type_of_strategy can not be empty",
-                'error': "True",
-            }
-
-        endpoint = "{}/{}/sw-update-strategy/{}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
+        endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         return self._api_call(api_call_type=requests.delete, url=endpoint)
 
     # Subcloud Update Strategy Actions
-    def execute_action_on_strategy(self, type_of_strategy: str, action: str) -> dict:
+    def execute_action_on_strategy(self, action: str) -> dict:
         """
         Executes an action on a patch strategy.
 
-        :param type_of_strategy: Filter to query a particular type of update strategy if it exists. One of: firmware,
         kube-rootca-update, kubernetes, patch, prestage, or upgrade
         :param action: Perform an action on the update strategy. Valid values are: apply, or abort
 
@@ -585,7 +566,6 @@ class StarlingxDcManagerClient(object):
         endpoint = "{}/{}/sw-update-strategy/actions".format(self.url, self.AVAILABLE_VERSION)
         data = {
             'action': action,
-            'type': type_of_strategy,
         }
 
         marshaled_object = json.dumps(data)
