@@ -810,7 +810,7 @@ def get_child_deployments(rest_client, deployment_id_of_parent: str):
             dep_id = deployment['id']
             labels_str = rest_client.deployments.get(deployment_id=dep_id)
             parent_deployment_id = [l['value'].lower() for l in list(eval(str(labels_str))['labels']) if 'csys-obj-parent' in l['key']]
-            if deployment_id_of_parent.lower() in parent_deployment_id.lower():
+            if deployment_id_of_parent.lower() in parent_deployment_id:
                 deployments.append(dep_id)
         return deployments
     except CloudifyClientError:

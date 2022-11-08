@@ -144,15 +144,12 @@ node_types:
             patch_dir:
               type: string
               default: ''
-            delete_strategy:
-              type: boolean
-              default: True
             type_of_strategy:
               type: string
               default: patch
             subcloud_apply_type:
               type: string
-              default: patch
+              default: serial
             strategy_action:
               type: string
               default: apply
@@ -162,9 +159,6 @@ node_types:
             stop_on_failure:
               type: boolean
               default: True
-            group_name:
-              type: string
-              default: default
         refresh_status:
           implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status_action
         check_status:
@@ -255,15 +249,7 @@ workflows:
         default: true
       operation_kwargs:
         default:
-          autoapply: True
-          refresh_status: True
           patch_dir: ''
-          delete_strategy: True
-          type_of_strategy: patch
-          subcloud_apply_type: patch
-          strategy_action: apply
-          max_parallel_subclouds: 1
-          stop_on_failure: True
 
   refresh_status:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation

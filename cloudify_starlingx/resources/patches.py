@@ -16,9 +16,9 @@ from cloudify.exceptions import OperationRetry
 
 
 @with_starlingx_resource(SystemResource)
-def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, delete_strategy: bool,
+def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str,
                            type_of_strategy: str, subcloud_apply_type: str, strategy_action: str,
-                           max_parallel_subclouds: int, stop_on_failure: bool, group_name: str, **kwargs):
+                           max_parallel_subclouds: int, stop_on_failure: bool, **kwargs):
     """
         Steps:
         1. Upload patch from patch dir
@@ -83,7 +83,6 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
         resp, _code = dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
-                                                                      cloud_name=group_name,
                                                                       max_parallel_subclouds=max_parallel_subclouds,
                                                                       stop_on_failure=stop_on_failure,
                                                                       subcloud_apply_type=subcloud_apply_type)
@@ -98,9 +97,6 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
 
     if refresh_status:
         refresh_status_action(ctx=ctx)
-
-    if delete_strategy:
-        dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
 
 @with_rest_client
@@ -135,8 +131,12 @@ def _get_status(resource, ctx, deployment_inputs):
                                                                 user_domain_id=user_domain_id,
                                                                 project_domain_id=project_domain_id,
                                                                 verify=verify_value)
-    resp, _ = dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)
-    return resp["state"]
+    resp, _code = dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)
+    if isinstance(resp, dict):
+        return resp["state"]
+    if isinstance(resp, str):
+        ctx.logger.warning('Strategy does not exist.\n{}'.format(resp))
+        return 'complete'
 
 
 @with_starlingx_resource(SystemResource)
