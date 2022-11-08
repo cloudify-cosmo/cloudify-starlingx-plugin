@@ -3,7 +3,9 @@ import re
 from ..utils import (
     get_child_deployments,
     with_rest_client,
-    add_new_label)
+    add_new_label,
+    get_parent_deployment,
+    get_secret)
 from ..decorators import with_starlingx_resource
 from starlingx_server.sdk.client import StarlingxPatchClient
 from starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
@@ -11,8 +13,6 @@ from starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
 from cloudify.exceptions import NonRecoverableError
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 from cloudify.exceptions import OperationRetry
-
-from cloudify.state import ctx_parameters as inputs
 
 
 @with_starlingx_resource(SystemResource)
@@ -88,9 +88,13 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
                                                                       stop_on_failure=stop_on_failure,
                                                                       subcloud_apply_type=subcloud_apply_type)
         ctx.logger.info('Create subcloud update strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
+        # if _code >= 300:
+        #     raise NonRecoverableError
         resp, _code = dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy,
                                                                  action=strategy_action)
         ctx.logger.info('Action on strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
+        # if _code >= 300:
+        #     raise NonRecoverableError
 
     if refresh_status:
         refresh_status_action(ctx=ctx)
@@ -112,17 +116,17 @@ def refresh_status_action(resource, ctx, rest_client):
         )
 
 
-def _get_status(resource, ctx):
+def _get_status(resource, ctx, deployment_inputs):
     client_config = resource.client_config
-    auth_url = client_config.get('os_auth_url')
-    username = client_config.get('os_username')
-    password = client_config.get('os_password')
+    auth_url = deployment_inputs.get('auth_url')
+    username = get_secret(secret_name=deployment_inputs.get('user_secret'))
+    password = get_secret(secret_name=deployment_inputs.get('password_secret'))
     project_name = client_config.get('os_project_name')
     user_domain_name = client_config.get('os_user_domain_name', None)
     project_domain_name = client_config.get('os_project_domain_name', None)
     user_domain_id = client_config.get('os_user_domain_id', None)
     project_domain_id = client_config.get('os_project_domain_id', None)
-    verify_value = True if client_config.get('insecure', None) else False
+    verify_value = False if deployment_inputs.get('insecure', None) else True
     subcloud_name = _get_subcloud_name(ctx=ctx)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                                 project_name=project_name,
@@ -139,7 +143,9 @@ def _get_status(resource, ctx):
 def check_status(resource, ctx):
     statuses_list = ['complete', 'failed']
     deployment_id = ctx.deployment.id
-    status = _get_status(resource, ctx)
+    deployment_info = get_parent_deployment(deployment_id=deployment_id)
+    ctx.logger.info('Parent deployment: {}'.format(deployment_info))
+    status = _get_status(resource, ctx, deployment_inputs=deployment_info['inputs'])
     if status not in statuses_list:
         raise OperationRetry
     else:
