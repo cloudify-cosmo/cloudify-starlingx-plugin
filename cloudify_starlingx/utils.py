@@ -803,15 +803,15 @@ def validate_auth_url(auth_url, ca=None, insecure=False):
 
 
 @with_rest_client
-def get_child_deployments(rest_client, deployment_id: str):
+def get_child_deployments(rest_client, deployment_id_of_parent: str):
     try:
         deployments = []
         for deployment in rest_client.deployments.list():
             dep_id = deployment['id']
             labels_str = rest_client.deployments.get(deployment_id=dep_id)
             parent_deployment_id = [l['value'].lower() for l in list(eval(str(labels_str))['labels']) if 'csys-obj-parent' in l['key']]
-            if deployment_id.lower() in parent_deployment_id:
-                deployments.append(deployment_id)
+            if deployment_id_of_parent.lower() in parent_deployment_id.lower():
+                deployments.append(dep_id)
         return deployments
     except CloudifyClientError:
         return

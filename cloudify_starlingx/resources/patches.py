@@ -12,6 +12,8 @@ from cloudify.exceptions import NonRecoverableError
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
 from cloudify.exceptions import OperationRetry
 
+from cloudify.state import ctx_parameters as inputs
+
 
 @with_starlingx_resource(SystemResource)
 def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool, patch_dir: str, delete_strategy: bool,
@@ -32,19 +34,21 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
     project_domain_name = client_config.get('os_project_domain_name', None)
     user_domain_id = client_config.get('os_user_domain_id', None)
     project_domain_id = client_config.get('os_project_domain_id', None)
-
+    verify_value = True if client_config.get('insecure', None) else False
     patch_client = StarlingxPatchClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                          project_name=project_name,
                                                          user_domain_name=user_domain_name,
                                                          project_domain_name=project_domain_name,
                                                          user_domain_id=user_domain_id,
-                                                         project_domain_id=project_domain_id)
+                                                         project_domain_id=project_domain_id,
+                                                         verify=verify_value)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                                 project_name=project_name,
                                                                 user_domain_name=user_domain_name,
                                                                 project_domain_name=project_domain_name,
                                                                 user_domain_id=user_domain_id,
-                                                                project_domain_id=project_domain_id)
+                                                                project_domain_id=project_domain_id,
+                                                                verify=verify_value)
     outputs = patch_client.upload_patch(patch_dir=patch_dir)
 
     if autoapply:
@@ -73,8 +77,6 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
             if resp.get('warning', ''):
                 ctx.logger.warning('Apply patch warn: {}'.format(resp.get('warning', '')))
 
-            assert resp['info'] == '{} has been applied\n'.format(patch_id)
-        
         resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
         ctx.logger.info('Strategy exist?: {}'.format(resp))
         if _code < 300:
@@ -99,10 +101,9 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
 
 @with_rest_client
 @with_starlingx_resource(SystemResource)
-def refresh_status_action(resource, ctx):
-    rest_client = resource.resource_config
+def refresh_status_action(resource, ctx, rest_client):
     deployment_id = ctx.deployment.id
-    child_deployment_ids = get_child_deployments(deployment_id=deployment_id)
+    child_deployment_ids = get_child_deployments(deployment_id_of_parent=deployment_id)
     for child_deployment_id in child_deployment_ids:
         rest_client.executions.start(
             deployment_id=child_deployment_id,
@@ -121,13 +122,15 @@ def _get_status(resource, ctx):
     project_domain_name = client_config.get('os_project_domain_name', None)
     user_domain_id = client_config.get('os_user_domain_id', None)
     project_domain_id = client_config.get('os_project_domain_id', None)
+    verify_value = True if client_config.get('insecure', None) else False
     subcloud_name = _get_subcloud_name(ctx=ctx)
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                                 project_name=project_name,
                                                                 user_domain_name=user_domain_name,
                                                                 project_domain_name=project_domain_name,
                                                                 user_domain_id=user_domain_id,
-                                                                project_domain_id=project_domain_id)
+                                                                project_domain_id=project_domain_id,
+                                                                verify=verify_value)
     resp, _ = dc_patch_client.get_all_strategy_steps_for_cloud(subcloud_name)
     return resp["state"]
 

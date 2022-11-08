@@ -52,17 +52,17 @@ def upgrade_deployment_manager(sw_version=None, ctx=None, **_):
     helm_chart_path = '{}/helm-chart-overrides.yaml'.format(home_path)
     
     # UPGRADE DEPLOYMENT MANAGER
-    _provide_the_required_files(ctx=ctx, sw_version=sw_version, deployment_manager_file=deployment_manager_file)
-    _upgrade_deployment_manager(ctx=ctx, inventory=inventory, ansible_overrides_file=ansible_overrides_file, user=user, ssh_password=ssh_password,
-                                deployment_manager_fil=deployment_manager_file, ctx=ctx)
+    _provide_the_required_files(sw_version=sw_version, deployment_manager_file=deployment_manager_file, ctx=ctx)
+    _upgrade_deployment_manager(inventory=inventory, ansible_overrides_file=ansible_overrides_file, user=user, ssh_password=ssh_password,
+                                deployment_manager_file=deployment_manager_file, ctx=ctx)
     _verify_deployment_manager_upgrade(namespace=namespace, pod_name=pod_name, sw_version=sw_version, ctx=ctx)
     _deploy_the_updated_deployment_manager_files(deployment_manager_file=deployment_manager_file, deploy_overrides_file=deploy_overrides_file,
                                                  deployment_manager_tgz_file=deployment_manager_tgz_file, ctx=ctx)
     # Upgrading the System Controller
-    _upgrade_the_system_controller(ansible_overrides=ansible_overrides_file,
+    _upgrade_the_system_controller(ansible_overrides_file=ansible_overrides_file,
                                    deployment_manager_file= deployment_manager_file,
                                    sw_version=sw_version, helm_chart_path=helm_chart_path,
-                                   deployment_manager_tgz_file=deployment_manager_tgz_file,
+                                   deployment_manager_tgz_file_patch=deployment_manager_tgz_file,
                                    registry=registry, manager_repo=manager_repo, rbac_proxy_image=rbac_proxy_image)
     # Upgrading the Subcloud
     _upgrading_the_subcloud(ctx, deployment_manager_file, deployment_manager_tgz_file, helm_chart_path, new_subcloud_password=None)

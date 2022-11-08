@@ -18,7 +18,7 @@ class StarlingxPatchClient(object):
     @classmethod
     def get_patch_client(cls, auth_url: str, username: str, password: str, project_name: str = 'admin',
                          user_domain_name: str = None, project_domain_name: str = None,
-                         user_domain_id: str = None, project_domain_id: str = None):
+                         user_domain_id: str = None, project_domain_id: str = None, verify: bool = True):
         """
         Instantiate API client together with gathering token from Keystone.
 
@@ -30,19 +30,21 @@ class StarlingxPatchClient(object):
         :param project_domain_name: Project domain Name for Keystone
         :param user_domain_id: User domain ID for Keystone
         :param project_domain_id: Project domain ID for Keystone
+        :param verify: check SSL certs
         """
 
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
                                         project_name=project_name,
                                         project_domain_name=project_domain_name, user_domain_name=user_domain_name,
-                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id)
+                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id,
+                                        verify=verify)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token
         }
 
-        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
-        return cls(url=all_endpoints[PATCHING_API_URL], headers=headers)
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
+        return cls(url=all_endpoints[PATCHING_API_URL], headers=headers, verify=verify)
 
     @classmethod
     def get_for_mock_server(cls, keystone_password: str):
@@ -53,18 +55,22 @@ class StarlingxPatchClient(object):
         """
         url = "http://localhost:15491"
 
-        token = get_token_from_keystone(auth_url='http://localhost:5000/v3', username='admin', password=keystone_password)
+        token = get_token_from_keystone(auth_url='http://localhost:5000/v3',
+                                        username='admin',
+                                        password=keystone_password,
+                                        verify=False)
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token
         }
 
-        return cls(url=url, headers=headers)
+        return cls(url=url, headers=headers, verify=False)
 
-    def __init__(self, url: str, headers: dict):
+    def __init__(self, url: str, headers: dict, verify: bool = True):
         self.connection = None
         self.url = url
         self.headers = headers
+        self.verify = verify
 
     def _api_call(self, api_call_type: requests, url='', headers=None, **kwargs):
         """
@@ -74,7 +80,8 @@ class StarlingxPatchClient(object):
         """
         url = url or self.url
         headers = headers or self.headers
-        response = api_call_type(url=url, headers=headers, **kwargs)
+        verify = kwargs.pop('verify', None) or self.verify
+        response = api_call_type(url=url, headers=headers, verify=verify, **kwargs)
         try:
             return response.json(), response.status_code
         except:

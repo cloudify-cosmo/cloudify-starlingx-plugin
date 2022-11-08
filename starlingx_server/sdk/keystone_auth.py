@@ -13,7 +13,7 @@ CHECKERS = ['/', '/v1.0', '/v1']
 
 def get_token_from_keystone(auth_url: str, username: str, password: str, project_name: str = 'admin',
                             user_domain_name: str = None, project_domain_name: str = None,
-                            user_domain_id: str = None, project_domain_id: str = None) -> str:
+                            user_domain_id: str = None, project_domain_id: str = None, verify: bool = True) -> str:
     """
     This function return keystone token.
     :param auth_url: Keystone url
@@ -24,6 +24,7 @@ def get_token_from_keystone(auth_url: str, username: str, password: str, project
     :param project_domain_name: Project domain name
     :param user_domain_id: User domain id
     :param project_domain_id: Project domain id
+    :param verify: check SSL certs
 
     :rtype: str
     """
@@ -36,23 +37,24 @@ def get_token_from_keystone(auth_url: str, username: str, password: str, project
                        user_domain_id=user_domain_id,
                        project_domain_id=project_domain_id)
 
-    sess = session.Session(auth=auth)
+    sess = session.Session(auth=auth, verify=verify)
     token = sess.get_token()
 
     return token
 
 
-def get_endpoints(auth_url: str, headers: dict) -> dict:
+def get_endpoints(auth_url: str, headers: dict, verify: bool = True) -> dict:
     """
     Returns API URLS for DcManager and Patch API.
 
     :param auth_url: Keystone auth url
     :param headers: Header containing token
+    :param verify: check SSL certs
 
     :rtype: dict
     """
     url = '{}/auth/catalog'.format(auth_url)
-    endpoints = requests.get(url=url, headers=headers)
+    endpoints = requests.get(url=url, headers=headers, verify=verify)
     all_endpoints = {}
 
     for entity in endpoints.json()['catalog']:

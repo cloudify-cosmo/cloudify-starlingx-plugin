@@ -26,6 +26,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     project_domain_name = client_config.get('os_project_domain_name', None)
     user_domain_id = client_config.get('os_user_domain_id', None)
     project_domain_id = client_config.get('os_project_domain_id', None)
+    verify_value = True if client_config.get('insecure', None) else False
 
     # : {'os_auth_url': 'http://[2620:10A:A001:A103::1065]:5000/v3', 'os_username': 'admin', 'os_project_name': 'admin',
     #    'os_region_name': 'RegionOne', 'os_user_domain_name': 'Default', 'os_project_domain_name': 'Default',
@@ -41,14 +42,16 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
                                                       user_domain_name=user_domain_name,
                                                       project_domain_name=project_domain_name,
                                                       user_domain_id=user_domain_id,
-                                                      project_domain_id=project_domain_id)
+                                                      project_domain_id=project_domain_id,
+                                                      verify=verify_value)
 
     dc_patch_client = StarlingxDcManagerClient.get_patch_client(auth_url=auth_url, username=username, password=password,
                                                                 project_name=project_name,
                                                                 user_domain_name=user_domain_name,
                                                                 project_domain_name=project_domain_name,
                                                                 user_domain_id=user_domain_id,
-                                                                project_domain_id=project_domain_id)
+                                                                project_domain_id=project_domain_id,
+                                                                verify=verify_value)
     # Upgrade steps
     _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
     _upgrade_storage_node(upgrade_client, storage_list, force_flag)

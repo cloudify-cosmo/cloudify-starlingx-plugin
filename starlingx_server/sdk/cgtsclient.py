@@ -16,10 +16,9 @@ from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endp
 class UpgradeClient(object):
     @classmethod
     def get_upgrade_client(cls, auth_url: str, username: str, password: str, endpoint_type: str = '',
-                           region_name: str = 'local', system_url='http://localhost',
-                           global_request_id: str = '', insecure: bool = False, project_name: str = 'admin',
+                           region_name: str = 'local', global_request_id: str = '', project_name: str = 'admin',
                            user_domain_name: str = None, project_domain_name: str = None,
-                           user_domain_id: str = None, project_domain_id: str = None):
+                           user_domain_id: str = None, project_domain_id: str = None, verify: bool = True):
         """
         Instantiate API client together with gathering token from Keystone.
 
@@ -35,21 +34,21 @@ class UpgradeClient(object):
         :param global_request_id:
         :param region_name:
         :param endpoint_type:
-        :param insecure:
-        :param system_url: API endpoint
+        :param verify: check SSL certs
         """
-
+        insecure = True if not verify else False
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
                                         project_name=project_name,
                                         project_domain_name=project_domain_name, user_domain_name=user_domain_name,
-                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id)
+                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id,
+                                        verify=verify)
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token
         }
 
-        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
 
         system_url = all_endpoints[SYSINV_API_URL]
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
