@@ -156,7 +156,7 @@ def _controller_is_unlocked(upgrade_client, controller_name):
 
 def _controller_is_locked(upgrade_client, controller_name):
     # 9. Wait for controller-1 to become unlocked-enabled
-    assert 'unlocked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+    assert 'locked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
