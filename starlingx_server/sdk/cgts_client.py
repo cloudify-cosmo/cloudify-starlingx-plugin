@@ -199,7 +199,7 @@ class UpgradeClient(object):
             raise exc.CommandError('host not found: %s' % hostname_or_id)
         _print_ihost_show(ihost)
 
-    def do_host_show(self, hostname_or_id, column, format):
+    def do_host_show(self, hostname_or_id, column='', format=''):
         """
         Shows host attributes.
 
@@ -210,6 +210,7 @@ class UpgradeClient(object):
 
         ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         _print_ihost_show(ihost, column, format)
+        return ihost
 
     def do_host_swact(self, hostname_or_id, force=True):
         """
@@ -245,7 +246,7 @@ class UpgradeClient(object):
 
         return i.list()
 
-    def do_host_list(self, column, format):
+    def do_host_list(self, column='', format=''):
         """
         Lists hosts.
 
@@ -263,6 +264,7 @@ class UpgradeClient(object):
 
         utils.print_list(ihosts, fields, fields, sortby=0,
                          output_format=format)
+        return ihosts
 
     def do_upgrade_activate(self):
         """

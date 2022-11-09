@@ -99,13 +99,14 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         upgrade_client.do_upgrade_show()
         # 5. Lock controller-1
         upgrade_client.do_host_lock(hostname_or_id=controller, force=force_flag)
+        _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller)
         # 6. Upgrade controller-1
         upgrade_client.do_host_upgrade(host_id=controller, force=force_flag)
         # 7. Check upgrade status
         upgrade_client.do_upgrade_show()
         # 8. Unlock controller-1
         upgrade_client.do_host_unlock(hostname_or_id=controller, force=force_flag)
-        _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller)
+        _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller)
     else:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
@@ -122,13 +123,14 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         upgrade_client.do_upgrade_show()
         # 5. Lock controller-1
         upgrade_client.do_host_lock(hostname_or_id=controller1, force=force_flag)
+        _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller1)
         # 6. Upgrade controller-1
         upgrade_client.do_host_upgrade(host_id=controller1, force=force_flag)
         # 7. Check upgrade status
         upgrade_client.do_upgrade_show()
         # 8. Unlock controller-1
         upgrade_client.do_host_unlock(hostname_or_id=controller1 , force=force_flag)
-        _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller1)
+        _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller1)
         # 10. TBD: Wait for the DRBD sync 400.001 Services-related alarm is raised and then cleared
         # 11. Set controller-1 as active controller
         upgrade_client.do_host_swact(hostname_or_id=controller0, force=force_flag)
@@ -139,16 +141,21 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
             raise NonRecoverableError
         # 13. Lock controller-0
         upgrade_client.do_host_lock(hostname_or_id=controller0, force=force_flag)
+        _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller0)
         # 14. Upgrade controller-0
         upgrade_client.do_host_upgrade(host_id=controller0, force=force_flag)
         # 15. Unlock Controller-0
         upgrade_client.do_host_unlock(hostname_or_id=controller0, force=force_flag)
-        _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller0)
+        _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
 
-def _verify_unlock_controller(upgrade_client, controller_name):
+def _controller_is_unlocked(upgrade_client, controller_name):
     # 9. Wait for controller-1 to become unlocked-enabled
-    output = upgrade_client.do_host_show(hostname_or_id=controller_name, column='', format='')
+    assert 'unlocked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
 
+
+def _controller_is_locked(upgrade_client, controller_name):
+    # 9. Wait for controller-1 to become unlocked-enabled
+    assert 'unlocked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
@@ -178,7 +185,6 @@ def _upgrade_worker_nodes(upgrade_client, workers_list, force_flag=True):
         upgrade_client.do_host_unlock(hostname_or_id=host, force=force_flag)
 
 
-
 def _finish_upgrade(upgrade_client, controllers_list, force_flag=True):
     if len(controllers_list)<=1:
         upgrade_client.do_upgrade_activate()
@@ -203,5 +209,3 @@ def _finish_upgrade(upgrade_client, controllers_list, force_flag=True):
         # 21. Complete the upgrade
         upgrade_client.do_upgrade_complete()
 
-
-from cgtsclient.v1 import load
