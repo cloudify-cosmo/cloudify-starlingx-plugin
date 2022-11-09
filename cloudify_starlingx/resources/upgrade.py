@@ -201,7 +201,7 @@ def _finish_upgrade(upgrade_client, controllers_list, force_flag=True):
         upgrade_client.wait_for_swact()
         active_controler = _get_active_controller()
         if controller0!=active_controler:
-                raise NonRecoverableError
+            raise NonRecoverableError
         # 19. Activate upgrade
         upgrade_client.do_upgrade_activate()
         # 20. Await for activation status complete
