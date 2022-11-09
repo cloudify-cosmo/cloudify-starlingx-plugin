@@ -78,7 +78,7 @@ def get_endpoints(auth_url: str, headers: dict, verify: bool = True) -> dict:
                     all_endpoints[PATCHING_API_URL] = endpoint
                     break
 
-        if entity['type'] == 'sysinv':
+        if entity['type'] == 'platform':
             for endpoint in entity['endpoints']:
                 if endpoint['interface'] == 'public':
                     endpoint = endpoint['url']

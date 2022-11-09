@@ -4,13 +4,13 @@ from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
 from cloudify.exceptions import NonRecoverableError
 
-from starlingx_server.sdk.cgtsclient import UpgradeClient
+from starlingx_server.sdk.cgts_client import UpgradeClient
 from starlingx_server.sdk.dcmanager import StarlingxDcManagerClient
 from upgrade_deployment_manager import upgrade_deployment_manager
 
 from ..decorators import with_starlingx_resource
 from cloudify_starlingx_sdk.resources.configuration import SystemResource
-from starlingx_server.sdk.keystone_auth import DC_MANAGER_API_URL
+from starlingx_server.sdk.keystone_auth import SYSINV_API_URL
 
 
 @with_starlingx_resource(SystemResource)
@@ -38,7 +38,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     storage_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"])
 
     upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username, password=password,
-                                                      endpoint_type=DC_MANAGER_API_URL, project_name=project_name,
+                                                      endpoint_type=SYSINV_API_URL, project_name=project_name,
                                                       user_domain_name=user_domain_name,
                                                       project_domain_name=project_domain_name,
                                                       user_domain_id=user_domain_id,
@@ -76,7 +76,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     list_of_subclouds = dc_patch_client.get_list_of_subclouds()
     # 23.3 Check each subcloud status
     for subcloud in list_of_subclouds:
-        details = dc_patch_client.get_subcloud_details(subcloud=subcloud)  #TODO
+        details, _code = dc_patch_client.get_subcloud_details(subcloud=subcloud)  #TODO
     # 23.4 Delete upgrade strategy
     dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
