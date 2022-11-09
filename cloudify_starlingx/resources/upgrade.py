@@ -109,8 +109,8 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
     else:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
-        active_controler = _get_active_controller()
-        if controller0!=active_controler:
+        active_controler = upgrade_client.get_active_controller()
+        if controller0 != active_controler:
             ctx.logger.error('ACTIVE Controller is diffrent than expected.\n Current active node: {}'.format(active_controler))
             raise NonRecoverableError
         upgrade_client.apply_license(license_file_path=license_file_path)
@@ -134,7 +134,7 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         upgrade_client.do_host_swact(hostname_or_id=controller0, force=force_flag)
         # 12. Wait for all services on controller-1 are enabled-active, the swact is complete
         upgrade_client.wait_for_swact()
-        active_controler = _get_active_controller(upgrade_client=upgrade_client)
+        active_controler = upgrade_client.get_active_controller()
         if controller1!=active_controler:
             raise NonRecoverableError
         # 13. Lock controller-0
@@ -144,12 +144,6 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         # 15. Unlock Controller-0
         upgrade_client.do_host_unlock(hostname_or_id=controller0, force=force_flag)
         _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller0)
-
-
-def _get_active_controller(upgrade_client):
-    #TODO 
-    pass
-
 
 def _verify_unlock_controller(upgrade_client, controller_name):
     # 9. Wait for controller-1 to become unlocked-enabled
@@ -199,8 +193,8 @@ def _finish_upgrade(upgrade_client, controllers_list, force_flag=True):
         # 18 Set controller-0 as active
         upgrade_client.do_host_swact(hostname_or_id=controller1, force=force_flag)
         upgrade_client.wait_for_swact()
-        active_controler = _get_active_controller()
-        if controller0!=active_controler:
+        active_controler = upgrade_client.get_active_controller()
+        if controller0 != active_controler:
             raise NonRecoverableError
         # 19. Activate upgrade
         upgrade_client.do_upgrade_activate()

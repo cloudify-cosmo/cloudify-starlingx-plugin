@@ -9,7 +9,7 @@ from cgtsclient.v1.iHost_shell import _print_ihost_show
 from cgtsclient.v1.iservice import iServiceManager
 from cgtsclient.v1.license import LicenseManager
 from cgtsclient.v1.upgrade_shell import _print_upgrade_show
-
+from cgtsclient.v1.ihost import ihost as hostObj
 from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endpoints, SYSINV_API_URL
 
 
@@ -52,6 +52,7 @@ class UpgradeClient(object):
         all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
 
         system_url = all_endpoints[SYSINV_API_URL]
+        system_url = 'http://localhost:6385'
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
                    global_request_id=global_request_id,
                    insecure=insecure, system_url=system_url)
@@ -310,5 +311,16 @@ class UpgradeClient(object):
         """
         return self.client.load.delete(load_id)
 
+    def get_active_controller(self):
+        host_name = ''
+        for controller in self.do_host_list():
+            if not isinstance(controller, hostObj):
+                continue
+            host_name = controller.hostname
+            host_status = controller.capabilities['Personality']
+            if host_status == 'Controller-Active':
+                break
+
+        return host_name
 
 
