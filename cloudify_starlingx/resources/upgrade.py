@@ -104,7 +104,7 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         # 7. Check upgrade status
         upgrade_client.do_upgrade_show()
         # 8. Unlock controller-1
-        upgrade_client.do_host_unlock(hostname_or_id=controller , force=force_flag)
+        upgrade_client.do_host_unlock(hostname_or_id=controller, force=force_flag)
         _verify_unlock_controller(upgrade_client=upgrade_client, controller_name=controller)
     else:
         controller0 = controllers_list[0]

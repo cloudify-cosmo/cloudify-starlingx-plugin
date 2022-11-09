@@ -151,7 +151,7 @@ def check_update_status(resource, ctx):
         raise OperationRetry
     else:
         if status not in 'notchecked':
-            add_new_label('csys-subcloud-status',
+            add_new_label('subcloud-status',
                           status,
                           deployment_id)
 

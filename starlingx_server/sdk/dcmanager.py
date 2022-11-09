@@ -529,7 +529,7 @@ class StarlingxDcManagerClient(object):
             data.update({'max-parallel-subclouds': max_parallel_subclouds})
 
         if stop_on_failure:
-            data.update({'stop-on-failure': stop_on_failure})
+            data.update({'stop-on-failure': str(stop_on_failure).lower()})
 
         if subcloud_apply_type:
             data.update({'subcloud-apply-type': subcloud_apply_type})
