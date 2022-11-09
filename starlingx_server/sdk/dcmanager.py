@@ -495,7 +495,7 @@ class StarlingxDcManagerClient(object):
         :rtype: dict
         """
         if type_of_strategy:
-            endpoint = "{}/{}/sw-update-strategy/?type={}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
+            endpoint = "{}/{}/sw-update-strategy?type={}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
         else:
             endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
 
@@ -552,7 +552,7 @@ class StarlingxDcManagerClient(object):
         """
 
         if type_of_strategy:
-            endpoint = "{}/{}/sw-update-strategy/?type={}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
+            endpoint = "{}/{}/sw-update-strategy?type={}".format(self.url, self.AVAILABLE_VERSION, type_of_strategy)
         else:
             endpoint = "{}/{}/sw-update-strategy/".format(self.url, self.AVAILABLE_VERSION)
         return self._api_call(api_call_type=requests.delete, url=endpoint)

@@ -161,8 +161,8 @@ node_types:
               default: True
         refresh_status:
           implementation: starlingx.cloudify_starlingx.resources.patches.refresh_status_action
-        check_status:
-          implementation: starlingx.cloudify_starlingx.resources.patches.check_status
+        check_update_status:
+          implementation: starlingx.cloudify_starlingx.resources.patches.check_update_status
         upgrade:
           implementation:  starlingx.cloudify_starlingx.resources.upgrade.upgrade
           inputs:
@@ -267,11 +267,11 @@ workflows:
       allow_kwargs_override:
         default: true
   
-  check_status:
+  check_update_status:
     mapping: default_workflows.cloudify.plugins.workflows.execute_operation
     parameters:
       operation:
-        default: cloudify.interfaces.patches.check_status
+        default: cloudify.interfaces.patches.check_update_status
       run_by_dependency_order:
         default: true
       type_names:

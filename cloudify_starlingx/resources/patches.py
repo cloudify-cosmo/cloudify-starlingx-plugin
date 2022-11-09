@@ -82,7 +82,8 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
         if _code < 300:
             dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
-        resp, _code = dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
+        resp, _code = dc_patch_client.create_subcloud_update_strategy(cloud_name='',
+                                                                      type_of_strategy=type_of_strategy,
                                                                       max_parallel_subclouds=max_parallel_subclouds,
                                                                       stop_on_failure=stop_on_failure,
                                                                       subcloud_apply_type=subcloud_apply_type)
@@ -107,7 +108,7 @@ def refresh_status_action(resource, ctx, rest_client):
     for child_deployment_id in child_deployment_ids:
         rest_client.executions.start(
             deployment_id=child_deployment_id,
-            workflow_id='check_status',
+            workflow_id='check_update_status',
             queue=True
         )
 
@@ -136,12 +137,12 @@ def _get_status(resource, ctx, deployment_inputs):
         return resp["state"]
     if isinstance(resp, str):
         ctx.logger.warning('Strategy does not exist.\n{}'.format(resp))
-        return 'complete'
+        return 'notchecked'
 
 
 @with_starlingx_resource(SystemResource)
-def check_status(resource, ctx):
-    statuses_list = ['complete', 'failed']
+def check_update_status(resource, ctx):
+    statuses_list = ['complete', 'failed', 'notchecked']
     deployment_id = ctx.deployment.id
     deployment_info = get_parent_deployment(deployment_id=deployment_id)
     ctx.logger.info('Parent deployment: {}'.format(deployment_info))
@@ -149,9 +150,10 @@ def check_status(resource, ctx):
     if status not in statuses_list:
         raise OperationRetry
     else:
-        add_new_label('csys-subcloud-status',
-                      status,
-                      deployment_id)
+        if status not in 'notchecked':
+            add_new_label('csys-subcloud-status',
+                          status,
+                          deployment_id)
 
 
 def _get_subcloud_name(ctx):
