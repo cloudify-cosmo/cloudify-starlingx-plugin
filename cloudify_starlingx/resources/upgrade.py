@@ -148,6 +148,7 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         upgrade_client.do_host_unlock(hostname_or_id=controller0, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
 
+
 def _controller_is_unlocked(upgrade_client, controller_name):
     # 9. Wait for controller-1 to become unlocked-enabled
     assert 'unlocked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
@@ -160,12 +161,12 @@ def _controller_is_locked(upgrade_client, controller_name):
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
     # # 16.1 Get sorage nodes list
-    # upgrade_client.do_host_list(column='', format='')
+    # upgrade_client.do_host_list()
     for host in storage_node_list:
         # 16.2 Lock storage node
         upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)
         # 16.3 Verify that storage node is locked
-        upgrade_client.do_host_show(hostname_or_id=host, column='', format='')
+        upgrade_client.do_host_show(hostname_or_id=host)
         # 16.4 Upgrade system storage
         upgrade_client.do_host_upgrade(host_id=host, force=force_flag)
         # 16.5 Unlock storage node
@@ -175,7 +176,7 @@ def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=Tru
 def _upgrade_worker_nodes(upgrade_client, workers_list, force_flag=True):
     # 17. Upgrade worker nodes - repeat for each worker node
     # # 17.1 Get worker node list
-    # upgrade_client.do_host_list(column='', format='')
+    # upgrade_client.do_host_list()
     for host in workers_list:
         # 17.2 lock worker node
         upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)

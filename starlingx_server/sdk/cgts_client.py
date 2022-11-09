@@ -14,7 +14,6 @@ from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endp
 
 
 class UpgradeClient(object):
-
     @classmethod
     def get_upgrade_client(cls, auth_url: str, username: str, password: str, endpoint_type: str = '',
                            region_name: str = 'local', global_request_id: str = '', project_name: str = 'admin',
@@ -32,30 +31,46 @@ class UpgradeClient(object):
         :param user_domain_id: User domain ID for Keystone
         :param project_domain_id: Project domain ID for Keystone
         :param project_name:
+        :param user_domain_id:
         :param global_request_id:
         :param region_name:
         :param endpoint_type:
-        :param verify: check SSL certs
+        :param insecure:
+        :param system_url: API endpoint
         """
-        insecure = True if not verify else False
+
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
-                                        project_name=project_name,
-                                        project_domain_name=project_domain_name, user_domain_name=user_domain_name,
-                                        project_domain_id=project_domain_id, user_domain_id=user_domain_id,
-                                        verify=verify)
+                                        project_name=project_name, user_domain_id=user_domain_id,
+                                        project_domain_id=project_domain_id)
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token
         }
-
-        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
+        insecure = True if not verify else False
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
 
         system_url = all_endpoints[SYSINV_API_URL]
-        system_url = 'http://localhost:6385'
+
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
                    global_request_id=global_request_id,
                    insecure=insecure, system_url=system_url)
+
+    @classmethod
+    def get_mock_client(cls, keystone_password: str):
+        """
+        Instantiate API client together with gathering token from Keystone.
+
+        :param keystone_password: Password for Keystone admin
+        """
+        url = "http://localhost:6385"
+
+        token = get_token_from_keystone(auth_url='http://localhost:5000/v3', username='admin',
+                                        password=keystone_password)
+
+        return cls(token=token, endpoint_type='', region_name='RegionOne',
+                   global_request_id='',
+                   insecure=True, system_url=url)
 
     def __init__(self, token: str, endpoint_type: str, region_name: str, global_request_id: str, system_url: str,
                  insecure=False):
@@ -63,20 +78,22 @@ class UpgradeClient(object):
                                  os_region_name=region_name, global_request_id=global_request_id, insecure=insecure,
                                  system_url=system_url)
 
-    def apply_license(self, license_file_path: str) -> Any:
+    def apply_license(self, license_file_path: str) -> str:
         """
         Applies license from file.
 
-        :param license_file_path:
-
-        :rtype: Any
+        :param license_file_path: Absolute path to the license file
+        :rtype: str
         """
+        try:
+            out = self.client.license.install_license(file=license_file_path)
+            return 'License applied successfully: {}, details: {}'.format(license_file_path, out)
+        except exc.HTTPException as e:
+            return 'Not able to apply license: {}, code: {}, details: {}'.format(license_file_path, e.code, e.details)
+        except Exception as e:
+            return 'Unhandled exception: details: {}'.format(e)
 
-        # license_manager = LicenseManager(api=self.client)
-        # license_manager.install_license(file=license_file_path)
-        self.client.license.install_license(file=license_file_path)
-
-    def upload_iso_and_sig_files(self, iso_path, sig_path, active='true', local='true'):
+    def upload_iso_and_sig_files(self, iso_path, sig_path, active='true', local='true') -> str:
         """
         Upload iso and sig files.
 
@@ -84,6 +101,7 @@ class UpgradeClient(object):
         :param sig_path: Relative path
         :param active:
         :param local:
+        :rtype: str
         """
 
         body = {
@@ -92,45 +110,47 @@ class UpgradeClient(object):
             'active': active,
             'local': local,
         }
+        try:
+            out = self.client.load.import_load(**body)
+            return 'Uploaded iso and sig files, details: {}'.format(out)
+        except exc.HTTPException as e:
+            return 'Not able to upload iso and sig files: {}, code: {}, details: {}'.format(iso_path, e.code, e.details)
+        except Exception as e:
+            return 'Unhandled exception: details: {}'.format(e)
 
-        imported_load = self.client.load.import_load(**body)
-
-        return imported_load
-
-    def do_upgrade_start(self, force):
+    def do_upgrade_start(self, force) -> str:
         """
         Starts a software upgrade.
 
         :type force:
+        :rtype: str
         """
-
-        upgrade = self.client.upgrade.create(force)
-        uuid = getattr(upgrade, 'uuid', '')
         try:
+            upgrade = self.client.upgrade.create(force)
+            uuid = getattr(upgrade, 'uuid', '')
             upgrade = self.client.upgrade.get(uuid)
-        except exc.HTTPNotFound:
-            raise exc.CommandError('Created upgrade UUID not found: %s' % uuid)
-        _print_upgrade_show(upgrade)
+            return 'Started upgrade process, details: {}'.format(upgrade)
+        except exc.HTTPException as e:
+            return 'Not able to start upgrades, code: {}, details: {}'.format(e.code, e.details)
 
-    def do_upgrade_show(self):
+    def do_upgrade_show(self) -> list:
         """
         Shows software upgrade details and attributes.
+        Returns empty list in case no servers in upgrade process.
+
+        :rtype: list
         """
 
-        upgrades = self.client.upgrade.list()
-        if upgrades:
-            _print_upgrade_show(upgrades[0])
-        else:
-            print('No upgrade in progress')
+        return self.client.upgrade.list()
 
-    def do_host_lock(self, hostname_or_id, force=True):
+    def do_host_lock(self, hostname_or_id, force=True) -> str:
         """
-        Locks a host.
+        Locks a given host.
 
-        :param force:
-        :type hostname_or_id: object
+        :param force: Force flag to lock host
+        :param hostname_or_id: Host or id for the given host
+        :rtype: str
         """
-
         attributes = []
 
         if force is True:
@@ -140,48 +160,36 @@ class UpgradeClient(object):
             # Normal lock operation
             attributes.append('action=lock')
 
-        patch = utils.args_array_to_patch("replace", attributes)
-        ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         try:
-            ihost = self.client.ihost.update(ihost.id, patch)
-        except exc.HTTPNotFound:
-            raise exc.CommandError('host not found: %s' % hostname_or_id)
-        _print_ihost_show(ihost)
+            patch = utils.args_array_to_patch("replace", attributes)
+            host = ihost_utils._find_ihost(self.client, hostname_or_id)
+            out = self.client.ihost.update(host.id, patch)
+            return 'Successfully locked host: {}, details: {}'.format(hostname_or_id, out)
+        except exc.HTTPException as e:
+            return 'Not able to lock host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
-    def do_host_upgrade(self, host_id, force=True):
+    def do_host_upgrade(self, host_id, force=True) -> str:
         """
         Performs software upgrade for a host.
-        :param force:
-        :param host_id:
+
+        :param force: Force flag to upgrade host
+        :param host_id: Host ID for the given host
+        :rtype: str
         """
+        try:
+            out = self.client.ihost.upgrade(host_id, force)
+            return 'Successfully upgraded host: {}, details: {}'.format(host_id, out)
+        except exc.HTTPException as e:
+            return 'Not able to upgrade host: {}, code: {}, details: {}'.format(host_id, e.code, e.details)
 
-        ihost_utils._find_ihost(self.client, host_id)
-        system_type, system_mode = utils._get_system_info(self.client)
-        simplex = system_mode == constants.SYSTEM_MODE_SIMPLEX
-
-        if simplex:
-            warning_message = (
-                '\n'
-                'WARNING: THIS OPERATION WILL COMPLETELY ERASE ALL DATA FROM THE '
-                'SYSTEM.\n'
-                'Only proceed once the system data has been copied to another '
-                'system.\n'
-                'Are you absolutely sure you want to continue?  [yes/N]: ')
-            confirm = input(warning_message)
-            if confirm != 'yes':
-                print("Operation cancelled.")
-                return
-
-        ihost = self.client.ihost.upgrade(host_id, force)
-        _print_ihost_show(ihost)
-
-    def do_host_unlock(self, hostname_or_id, force=True):
+    def do_host_unlock(self, hostname_or_id, force=True) -> str:
         """
         Unlocks a host.
-        :param force:
-        :param hostname_or_id:
-        """
 
+        :param force: Force to unlock
+        :param hostname_or_id: Host or id for the given host
+        :rtype: str
+        """
         attributes = []
 
         if force is True:
@@ -194,32 +202,33 @@ class UpgradeClient(object):
         patch = utils.args_array_to_patch("replace", attributes)
         ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         try:
-            ihost = self.client.ihost.update(ihost.id, patch)
-        except exc.HTTPNotFound:
-            raise exc.CommandError('host not found: %s' % hostname_or_id)
-        _print_ihost_show(ihost)
+            out = self.client.ihost.update(ihost.id, patch)
+            return 'Successfully unlocked host: {}, details: {}'.format(hostname_or_id, out)
+        except exc.HTTPException as e:
+            return 'Not able to unlock host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
-    def do_host_show(self, hostname_or_id, column='', format=''):
+    def do_host_show(self, hostname_or_id) -> str:
         """
         Shows host attributes.
 
-        :param hostname_or_id:
-        :param column:
-        :param format:
+        :param hostname_or_id: Host or id for the given host
+        :rtype: str
         """
 
-        ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
-        _print_ihost_show(ihost, column, format)
-        return ihost
+        try:
+            out = ihost_utils._find_ihost(self.client, hostname_or_id)
+            return 'Host: {}, details: {}'.format(hostname_or_id, out)
+        except exc.HTTPException as e:
+            return 'Unable to show host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
-    def do_host_swact(self, hostname_or_id, force=True):
+    def do_host_swact(self, hostname_or_id, force=True) -> str:
         """
         Switches activity away from this active host.
 
-        :param hostname_or_id:
-        :param force:
+        :param force: Force to unlock
+        :param hostname_or_id: Host or id for the given host
+        :rtype: str
         """
-
         attributes = []
 
         if force is True:
@@ -233,42 +242,36 @@ class UpgradeClient(object):
         ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         try:
             ihost = self.client.ihost.update(ihost.id, patch)
-        except exc.HTTPNotFound:
-            raise exc.CommandError('host not found: %s' % hostname_or_id)
-        _print_ihost_show(ihost)
+            return 'Activity was switched away from host: {}, details: {}'.format(hostname_or_id, ihost)
+        except exc.HTTPNotFound as e:
+            return 'host not found: {}, details: {}'.format(hostname_or_id, e.details)
 
-    def wait_for_swact(self):
+    def wait_for_swact(self) -> list:
         """
         Waits for all services on controller-1 are enabled-active, the swact is complete.
+
+        :rtype: list
         """
 
         i = iServiceManager(api=self.client)
 
         return i.list()
 
-    def do_host_list(self, column='', format=''):
+    def do_host_list(self) -> list:
         """
         Lists hosts.
 
-        :param column:
-        :param format:
+        :rtype: list
         """
 
-        ihosts = self.client.ihost.list()
+        hosts = self.client.ihost.list()
+        return hosts
 
-        if column:
-            fields = column
-        else:
-            fields = ['id', 'hostname', 'personality', 'administrative',
-                      'operational', 'availability']
-
-        utils.print_list(ihosts, fields, fields, sortby=0,
-                         output_format=format)
-        return ihosts
-
-    def do_upgrade_activate(self):
+    def do_upgrade_activate(self) -> str:
         """
         Activate a software upgrade.
+
+        :rtype: str
         """
 
         data = dict()
@@ -278,40 +281,52 @@ class UpgradeClient(object):
         for (k, v) in data.items():
             patch.append({'op': 'replace', 'path': '/' + k, 'value': v})
         try:
-            upgrade = self.client.upgrade.update(patch)
-        except exc.HTTPNotFound:
-            raise exc.CommandError('Upgrade UUID not found')
-        _print_upgrade_show(upgrade)
+            out = self.client.upgrade.update(patch)
+            return 'Software upgrade was activated successfully: {}'.format(out)
+        except exc.HTTPException as e:
+            return 'Software upgrade was not activated successfully: {}, details: {}'.format(e.code, e.details)
 
     def do_upgrade_complete(self):
         """
         Complete a software upgrade.
         """
-
         try:
-            upgrade = self.client.upgrade.delete()
-        except exc.HTTPNotFound:
-            raise exc.CommandError('Upgrade not found')
+            out = self.client.upgrade.delete()
+            return 'Software upgrade was completed successfully: {}'.format(out)
+        except exc.HTTPException as e:
+            return 'Software upgrade was not activated successfully: {}, details: {}'.format(e.code, e.details)
 
-        _print_upgrade_show(upgrade)
-    
-    def get_system_upgrade_health(self):
+    def get_system_upgrade_health(self) -> str:
         """
-            get system health: system health-query-upgrade
+        Get system health: system health-query-upgrade.
+
+        :rtype: str
         """
-        return self.client.health.get_upgrade()
-    
-    def get_load_list(self):
+        try:
+            out = self.client.health.get_upgrade()
+            return 'Software health: {}'.format(out)
+        except exc.HTTPException as e:
+            return 'Unable to get system health: {}, details: {}'.format(e.code, e.details)
+
+    def get_load_list(self) -> list:
         """
         system load-list
+
+        :rtype: list
         """
         return self.client.load.list()
-    
-    def delete_load(self, load_id):
+
+    def delete_load(self, load_id) -> str:
         """
-        system load-delete 1
+        Delete load for given load ID.
+
+        :rtype: str
         """
-        return self.client.load.delete(load_id)
+        try:
+            out = self.client.load.delete(load_id)
+            return 'Load ID: {} is deleted, details: {}'.format(load_id, out)
+        except exc.HTTPException as e:
+            return 'Unable to proceed request, http code: {}, details: {}'.format(e.code, e.details)
 
     def get_active_controller(self):
         host_name = ''
@@ -322,7 +337,4 @@ class UpgradeClient(object):
             host_status = controller.capabilities['Personality']
             if host_status == 'Controller-Active':
                 break
-
         return host_name
-
-
