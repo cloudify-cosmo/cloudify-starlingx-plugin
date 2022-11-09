@@ -520,7 +520,7 @@ class StarlingxDcManagerClient(object):
         endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
         data = {}
         if cloud_name:
-            data.update({'type': type_of_strategy})
+            data.update({'cloud_name': cloud_name})
 
         if type_of_strategy:
             data.update({'type': type_of_strategy})
