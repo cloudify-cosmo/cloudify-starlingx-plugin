@@ -80,21 +80,21 @@ def upload_and_apply_patch(resource, ctx, autoapply: bool, refresh_status: bool,
         resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
         ctx.logger.info('Strategy exist?: {}'.format(resp))
         if _code < 300:
-            dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
+            resp, _code = dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
+            ctx.logger.warning('Try to delete...\nResponse: {}'.format(resp))
 
-        resp, _code = dc_patch_client.create_subcloud_update_strategy(cloud_name='',
-                                                                      type_of_strategy=type_of_strategy,
+        resp, _code = dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
                                                                       max_parallel_subclouds=max_parallel_subclouds,
                                                                       stop_on_failure=stop_on_failure,
                                                                       subcloud_apply_type=subcloud_apply_type)
         ctx.logger.info('Create subcloud update strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
-        # if _code >= 300:
-        #     raise NonRecoverableError
+        if _code >= 300:
+            raise NonRecoverableError
         resp, _code = dc_patch_client.execute_action_on_strategy(type_of_strategy=type_of_strategy,
                                                                  action=strategy_action)
         ctx.logger.info('Action on strategy logs.\n RESP: {}\nCODE: {}.'.format(resp, _code))
-        # if _code >= 300:
-        #     raise NonRecoverableError
+        if _code >= 300:
+            raise NonRecoverableError
 
     if refresh_status:
         refresh_status_action(ctx=ctx)

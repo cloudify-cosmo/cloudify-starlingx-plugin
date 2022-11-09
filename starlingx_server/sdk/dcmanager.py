@@ -501,7 +501,7 @@ class StarlingxDcManagerClient(object):
 
         return self._api_call(api_call_type=requests.get, url=endpoint)
 
-    def create_subcloud_update_strategy(self, cloud_name: str, type_of_strategy: str = None,
+    def create_subcloud_update_strategy(self, cloud_name: str = None, type_of_strategy: str = None,
                                         max_parallel_subclouds: int = None, stop_on_failure: str = None,
                                         subcloud_apply_type: str = None) -> dict:
         """
@@ -517,14 +517,11 @@ class StarlingxDcManagerClient(object):
 
         :rtype: dict
         """
-        if not cloud_name:
-            return {
-                'message': "type_of_strategy can not be empty",
-                'error': "True",
-            }
-
         endpoint = "{}/{}/sw-update-strategy".format(self.url, self.AVAILABLE_VERSION)
-        data = {'cloud_name': cloud_name}
+        data = {}
+        if cloud_name:
+            data.update({'type': type_of_strategy})
+
         if type_of_strategy:
             data.update({'type': type_of_strategy})
 
