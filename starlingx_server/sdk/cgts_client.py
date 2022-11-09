@@ -14,6 +14,7 @@ from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endp
 
 
 class UpgradeClient(object):
+
     @classmethod
     def get_upgrade_client(cls, auth_url: str, username: str, password: str, endpoint_type: str = '',
                            region_name: str = 'local', global_request_id: str = '', project_name: str = 'admin',
@@ -57,7 +58,7 @@ class UpgradeClient(object):
 
     def __init__(self, token: str, endpoint_type: str, region_name: str, global_request_id: str, system_url: str,
                  insecure=False):
-        self.client = get_client(api_version=1, os_auth_token=token, os_endpoint_type=endpoint_type,
+        self.client = get_client(api_version='1', os_auth_token=token, os_endpoint_type=endpoint_type,
                                  os_region_name=region_name, global_request_id=global_request_id, insecure=insecure,
                                  system_url=system_url)
 
