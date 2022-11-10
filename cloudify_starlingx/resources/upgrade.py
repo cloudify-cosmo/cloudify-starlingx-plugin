@@ -53,7 +53,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
                                                                 project_domain_id=project_domain_id,
                                                                 verify=verify_value)
     # Upgrade steps
-    _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
+    _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
     _upgrade_storage_node(upgrade_client, storage_list, force_flag)
     _upgrade_worker_nodes(upgrade_client, workers_list, force_flag)
     _finish_upgrade(upgrade_client, controllers_list, force_flag)
@@ -81,10 +81,10 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
 
 
-def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
+def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
     # Make sure we are connected to controller-0
     # 1. Install license for new release
-    if len(controllers_list)<=1:
+    if len(controllers_list) <= 1:
         controller = controllers_list[0]
         upgrade_client.apply_license(license_file_path=license_file_path)
         # 2. Upload ISO and SIG files to controller-0
@@ -110,9 +110,10 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
     else:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
-        active_controler = upgrade_client.get_active_controller()
-        if controller0 != active_controler:
-            ctx.logger.error('ACTIVE Controller is diffrent than expected.\n Current active node: {}'.format(active_controler))
+        active_controller = upgrade_client.get_active_controller()
+        if controller0 != active_controller:
+            ctx.logger.error('ACTIVE Controller is different than expected.\n'
+                             ' Current active node: {}'.format(active_controller))
             raise NonRecoverableError
         upgrade_client.apply_license(license_file_path=license_file_path)
         # 2. Upload ISO and SIG files to controller-0
@@ -136,8 +137,8 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         upgrade_client.do_host_swact(hostname_or_id=controller0, force=force_flag)
         # 12. Wait for all services on controller-1 are enabled-active, the swact is complete
         upgrade_client.wait_for_swact()
-        active_controler = upgrade_client.get_active_controller()
-        if controller1!=active_controler:
+        active_controller = upgrade_client.get_active_controller()
+        if controller1 != active_controller:
             raise NonRecoverableError
         # 13. Lock controller-0
         upgrade_client.do_host_lock(hostname_or_id=controller0, force=force_flag)
@@ -161,6 +162,7 @@ def _controller_is_locked(upgrade_client, controller_name):
     state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
     if state != 'unlocked':
         raise NonRecoverableError
+
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
