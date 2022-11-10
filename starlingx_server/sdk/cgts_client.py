@@ -35,23 +35,24 @@ class UpgradeClient(object):
         :param global_request_id:
         :param region_name:
         :param endpoint_type:
-        :param insecure:
-        :param system_url: API endpoint
+        :param verify:
         """
 
         token = get_token_from_keystone(auth_url=auth_url, username=username, password=password,
-                                        project_name=project_name, user_domain_id=user_domain_id,
-                                        project_domain_id=project_domain_id)
+                                        project_name=project_name,
+                                        user_domain_id=user_domain_id, project_domain_id=project_domain_id,
+                                        project_domain_name=project_domain_name, user_domain_name=user_domain_name,
+                                        verify=verify)
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "X-Auth-Token": token
         }
         insecure = True if not verify else False
-        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers)
+        all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
 
         system_url = all_endpoints[SYSINV_API_URL]
-
+        system_url = 'http://localhost:6385'
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
                    global_request_id=global_request_id,
                    insecure=insecure, system_url=system_url)
