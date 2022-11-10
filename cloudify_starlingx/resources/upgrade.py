@@ -149,14 +149,18 @@ def _upgrade_controlers(ctx, upgrade_client, controllers_list, license_file_path
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
 
 
-def _controller_is_unlocked(upgrade_client, controller_name):
+def _controller_is_unlocked(upgrade_client, controller_name, retry):
     # 9. Wait for controller-1 to become unlocked-enabled
-    assert 'unlocked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+    state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+    if state != 'unlocked':
+        raise NonRecoverableError
 
 
 def _controller_is_locked(upgrade_client, controller_name):
     # 9. Wait for controller-1 to become unlocked-enabled
-    assert 'locked' == upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+    state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+    if state != 'unlocked':
+        raise NonRecoverableError
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
     # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
