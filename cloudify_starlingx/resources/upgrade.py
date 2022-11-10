@@ -86,7 +86,10 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
     # 1. Install license for new release
     if len(controllers_list) <= 1:
         controller = controllers_list[0]
-        upgrade_client.apply_license(license_file_path=license_file_path)
+        resp = upgrade_client.apply_license(license_file_path=license_file_path)
+        if 'Success: new license installed' not in resp.get('success', ''):
+            ctx.logger.error('License not installed: {}'.format(resp))
+            raise NonRecoverableError
         # 2. Upload ISO and SIG files to controller-0
         upgrade_client.upload_iso_and_sig_files(iso_path=iso_path, sig_path=sig_path, active='true', local='true')
         health_status = upgrade_client.get_system_upgrade_health()

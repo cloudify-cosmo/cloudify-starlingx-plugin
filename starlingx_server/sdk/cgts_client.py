@@ -87,8 +87,9 @@ class UpgradeClient(object):
         :rtype: str
         """
         try:
-            out = self.client.license.install_license(file=license_file_path)
-            return 'License applied successfully: {}, details: {}'.format(license_file_path, out)
+            with open(license_file_path, 'rb') as f:
+                file_content = f.read()
+            return self.client.license.install_license(file=file_content)
         except exc.HTTPException as e:
             return 'Not able to apply license: {}, code: {}, details: {}'.format(license_file_path, e.code, e.details)
         except Exception as e:
