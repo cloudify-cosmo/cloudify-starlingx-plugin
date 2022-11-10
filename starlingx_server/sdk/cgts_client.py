@@ -218,7 +218,7 @@ class UpgradeClient(object):
 
         try:
             out = ihost_utils._find_ihost(self.client, hostname_or_id)
-            return 'Host: {}, details: {}'.format(hostname_or_id, out)
+            return out
         except exc.HTTPException as e:
             return 'Unable to show host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
