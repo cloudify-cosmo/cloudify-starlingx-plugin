@@ -7,14 +7,14 @@ from cloudify.exceptions import NonRecoverableError
 
 
 def smart_connection(func):
-    def inner_func(ctx, command, responses=None, source=True):
+    def inner_func(ctx: object, command: str, responses: object = None, source: bool = True) -> object:
         # TODO find way to get info from ctx
         ip = ''
         user = ''
         password = ''
         port = 22
-        source = 'source /etc/platform/openrc && {}'
-        cmd = source.format(command) if source else command
+        source_cmd = 'source /etc/platform/openrc && {}'
+        cmd = source_cmd.format(command) if source else command
         func(ip, user, password, port, cmd, responses, ctx=ctx)
     return inner_func
 
@@ -33,39 +33,45 @@ def upgrade_deployment_manager(sw_version=None, ctx=None, **_):
         Once you have completed a platform upgrade from Wind River Cloud Platform Release 20.06 to Release 21.05,
         sw_version: WRCP_21.05       
     """
-    user='sysdamin'
-    ssh_password=''
+    user = 'sysdamin'
+    ssh_password = ''
     home_path = '/home/sysadmin'
-    inventory='controller-0'
-    namespace='platform-deployment-manager'
-    pod_name='platform-deployment-manager-0'
+    inventory = 'controller-0'
+    namespace = 'platform-deployment-manager'
+    pod_name = 'platform-deployment-manager-0'
     # sw_version = 'WRCP_21.05'
-    sw_version_short = sw_version.replace('.','')
+    sw_version_short = sw_version.replace('.', '')
     registry = 'registry.local:9001'
     manager_repo = '/docker.io/wind-river/cloud-platform-deployment-manager'
     rbac_proxy_image = '/gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0'
 
     ansible_overrides_file = '{}/ansible-overrides.yaml'.format(home_path)
     deploy_overrides_file = '{}/wind-river-cloud-platform-deployment-manager-overrides.yaml'.format(home_path)
-    deployment_manager_file='{}/{}/wind-river-cloud-platform-deployment-manager.yaml'.format(home_path, sw_version_short)
-    deployment_manager_tgz_file = '{}/{}/wind-river-cloud-platform-deployment-manager-2.0.6.tgz'.format(home_path, sw_version_short)
+    deployment_manager_file = '{}/{}/wind-river-cloud-platform-deployment-manager.yaml'\
+        .format(home_path, sw_version_short)
+    deployment_manager_tgz_file = '{}/{}/wind-river-cloud-platform-deployment-manager-2.0.6.tgz'.\
+        format(home_path, sw_version_short)
     helm_chart_path = '{}/helm-chart-overrides.yaml'.format(home_path)
     
     # UPGRADE DEPLOYMENT MANAGER
     _provide_the_required_files(sw_version=sw_version, deployment_manager_file=deployment_manager_file, ctx=ctx)
-    _upgrade_deployment_manager(inventory=inventory, ansible_overrides_file=ansible_overrides_file, user=user, ssh_password=ssh_password,
+    _upgrade_deployment_manager(inventory=inventory, ansible_overrides_file=ansible_overrides_file,
+                                user=user, ssh_password=ssh_password,
                                 deployment_manager_file=deployment_manager_file, ctx=ctx)
     _verify_deployment_manager_upgrade(namespace=namespace, pod_name=pod_name, sw_version=sw_version, ctx=ctx)
-    _deploy_the_updated_deployment_manager_files(deployment_manager_file=deployment_manager_file, deploy_overrides_file=deploy_overrides_file,
+    _deploy_the_updated_deployment_manager_files(deployment_manager_file=deployment_manager_file,
+                                                 deploy_overrides_file=deploy_overrides_file,
                                                  deployment_manager_tgz_file=deployment_manager_tgz_file, ctx=ctx)
     # Upgrading the System Controller
     _upgrade_the_system_controller(ansible_overrides_file=ansible_overrides_file,
-                                   deployment_manager_file= deployment_manager_file,
+                                   deployment_manager_file=deployment_manager_file,
                                    sw_version=sw_version, helm_chart_path=helm_chart_path,
                                    deployment_manager_tgz_file_patch=deployment_manager_tgz_file,
                                    registry=registry, manager_repo=manager_repo, rbac_proxy_image=rbac_proxy_image)
     # Upgrading the Subcloud
-    _upgrading_the_subcloud(ctx, deployment_manager_file, deployment_manager_tgz_file, helm_chart_path, new_subcloud_password=None)
+    _upgrading_the_subcloud(ctx, deployment_manager_file,
+                            deployment_manager_tgz_file, helm_chart_path,
+                            new_subcloud_password=None)
 
 
 def _provide_the_required_files(sw_version, deployment_manager_file, ctx=None):
@@ -75,9 +81,10 @@ def _provide_the_required_files(sw_version, deployment_manager_file, ctx=None):
         to controler-0
     """
     pass
-    #TODO - find way how to check if WRCP_2105.zip is downloaded
+    # TODO - find way how to check if WRCP_2105.zip is downloaded
     ctx = ctx or wtx
-    download_command = 'curl --output {} https://raw.githubusercontent.com/Wind-River/cloud-platform-deployment-manager/master/docs/playbooks/wind-river-cloud-platform-deployment-manager.yaml'
+    download_command = 'curl --output {} https://raw.githubusercontent.com/Wind-River/cloud-platform-deployment-' \
+                       'manager/master/docs/playbooks/wind-river-cloud-platform-deployment-manager.yaml'
     resp = _run_ssh_command(ctx, download_command.format(deployment_manager_file))
 
 
@@ -92,7 +99,8 @@ def _upgrade_deployment_manager(inventory, ansible_overrides_file, user, ssh_pas
                  {"question": "SUDO password[defaults to SSH password]:", "answer": ssh_password},
                 ]
     ansible_command = 'ansible-playbook --inventory {}, --extra-var "@{}" --ask-pass --ask-become-pass --user {} {}'
-    resp = _run_ssh_command(ctx, ansible_command.format(inventory, ansible_overrides_file, user, deployment_manager_file))
+    resp = _run_ssh_command(ctx, ansible_command.format(inventory, ansible_overrides_file,
+                                                        user, deployment_manager_file))
 
 
 def _verify_deployment_manager_upgrade(namespace, pod_name, sw_version=None, ctx=None):
@@ -125,14 +133,15 @@ def _verify_deployment_manager_upgrade(namespace, pod_name, sw_version=None, ctx
     cmd_image = 'kubectl describe pod -n {} {} | grep Image'
     pods_list = 'kubectl get pods -n {}'
     img_output = _run_ssh_command(ctx, cmd_image.format(namespace, pod_name))
-    image_version = re.findall('cloud-platform-deployment-manager:(.*)', img_output)[-1].replace('.','')
+    image_version = re.findall('cloud-platform-deployment-manager:(.*)', img_output)[-1].replace('.', '')
     if image_version not in sw_version:
         raise NonRecoverableError  ## -> correct?
     pod_list = _run_ssh_command(ctx, pods_list.format(namespace))
     #TODO verify pod list
 
 
-def _deploy_the_updated_deployment_manager_files(deployment_manager_file, deploy_overrides_file, deployment_manager_tgz_file, ctx=None):
+def _deploy_the_updated_deployment_manager_files(deployment_manager_file, deploy_overrides_file,
+                                                 deployment_manager_tgz_file, ctx=None):
     """
         ~(keystone_admin)] dcmanager subcloud-deploy upload --deploy-playbook WRCP_2105/wind-river-clou
         d-platform-deployment-manager.yaml --deploy-overrides wind-river-cloud-platform-deployment-mana
@@ -168,7 +177,6 @@ def _upgrade_the_system_controller(sw_version, deployment_manager_file, ansible_
         2. Execute the following command.
         ~(keystone_admin)] ansible-playbook wind-river-cloud-platform-deployment-manager.yaml -e @ansible-overrides.yaml
     """
-    
 
     create_ansible_overrides_file_command = """cat << EOF > {}
 ansible_become_pass: {}
@@ -220,7 +228,10 @@ def _upgrading_the_subcloud(ctx, deployment_manager_file, deployment_manager_tgz
     ---
     """
     # helm-chart-overrides.yaml is configured in previous step
-    subcloud_update_command = 'dcmanager subcloud-deploy upload --deploy-playbook {} --deploy-chart {} --deploy-overrides {}'.format(deployment_manager_file, deployment_manager_tgz_file, helm_chart_path)
+    subcloud_update_command = 'dcmanager subcloud-deploy upload --deploy-playbook {} --deploy-chart {}' \
+                              ' --deploy-overrides {}'.format(deployment_manager_file,
+                                                              deployment_manager_tgz_file,
+                                                              helm_chart_path)
     _run_ssh_command(ctx, subcloud_update_command)
     if new_subcloud_password:
         deployment_config = '/home/sysadmin/deployment-config.yaml'
@@ -235,4 +246,5 @@ metadata:
         _run_ssh_command(ctx, deployment_config_cmd)
         subcloud_list = []
         for subcloud in subcloud_list:
-            _run_ssh_command(ctx, subcloud_password_update_command.format(new_subcloud_password, deployment_config, subcloud))
+            _run_ssh_command(ctx, subcloud_password_update_command.format(new_subcloud_password,
+                                                                          deployment_config, subcloud))

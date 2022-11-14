@@ -62,7 +62,7 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     # 23. Upgrade subclouds (same as patch, just different strategy type)
     # 23.0 Create upgrade strategy
     resp, _code = dc_patch_client.get_subcloud_update_strategy(type_of_strategy=type_of_strategy)
-    if _code<300:
+    if _code < 300:
         dc_patch_client.delete_update_strategy(type_of_strategy=type_of_strategy)
     dc_patch_client.create_subcloud_update_strategy(type_of_strategy=type_of_strategy,
                                                     cloud_name=group_name,
