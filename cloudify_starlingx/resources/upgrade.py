@@ -30,14 +30,15 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     project_domain_id = client_config.get('os_project_domain_id', None)
     verify_value = True if client_config.get('insecure', None) else False
 
-
     host_runtime_properties = ctx.instance.runtime_properties.get('hosts', {})
-    controllers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "controller"])
+    controllers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items()
+                               if v["subfunctions"] == "controller"])
     workers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"])
-    storage_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "worker"])
+    storage_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "storage"])
 
     upgrade_client = UpgradeClient.get_upgrade_client(auth_url=auth_url, username=username, password=password,
-                                                      endpoint_type=SYSINV_API_URL, project_name=project_name,
+                                                      endpoint_type=SYSINV_API_URL,
+                                                      project_name=project_name,
                                                       user_domain_name=user_domain_name,
                                                       project_domain_name=project_domain_name,
                                                       user_domain_id=user_domain_id,
@@ -52,10 +53,12 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
                                                                 project_domain_id=project_domain_id,
                                                                 verify=verify_value)
     # Upgrade steps
-    _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag)
-    _upgrade_storage_node(upgrade_client, storage_list, force_flag)
-    _upgrade_worker_nodes(upgrade_client, workers_list, force_flag)
-    _finish_upgrade(upgrade_client, controllers_list, force_flag)
+    load_id = _upgrade_controllers(ctx=ctx, upgrade_client=upgrade_client, controllers_list=controllers_list,
+                                   license_file_path=license_file_path, iso_path=iso_path, sig_path=sig_path,
+                                   force_flag=force_flag)
+    _upgrade_storage_node(upgrade_client=upgrade_client, storage_node_list=storage_list, force_flag=force_flag)
+    _upgrade_worker_nodes(ctx=ctx, upgrade_client=upgrade_client, workers_list=workers_list, force_flag=force_flag)
+    _finish_upgrade(upgrade_client, controllers_list, load_id=load_id, force_flag=force_flag)
     # 22. Upgrade Deployment Manager
     upgrade_deployment_manager(sw_version=sw_version)
     # 23. Upgrade subclouds (same as patch, just different strategy type)
@@ -82,13 +85,12 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
 
 def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
     # Make sure we are connected to controller-0
-    if len(controllers_list) <= 1:
-        health_status = upgrade_client.get_system_upgrade_health()
-        status = True if re.findall('Fail|NOK', health_status) else False
-        if status:
-            ctx.logger.error('Health is NOK.\n{}'.format(health_status))
-            raise NonRecoverableError
-    else:
+    health_status = upgrade_client.get_system_upgrade_health()
+    status = True if re.findall('Fail|NOK', health_status) else False
+    if status:
+        ctx.logger.error('Health problem...\n{}'.format(health_status))
+        raise NonRecoverableError
+    if len(controllers_list) > 1:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
         active_controller = upgrade_client.get_active_controller()
@@ -157,6 +159,7 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         upgrade_client.wait_for_swact()
         active_controller = upgrade_client.get_active_controller()
         if controller1 != active_controller:
+            ctx.logger.error('Active controller is different than expected')
             raise NonRecoverableError
         # 13. Lock controller-0
         upgrade_client.do_host_lock(hostname_or_id=controller0, force=force_flag)
@@ -166,6 +169,61 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         # 15. Unlock Controller-0
         upgrade_client.do_host_unlock(hostname_or_id=controller0, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
+        return load_id
+
+
+def _upgrade_storage_node(ctx, upgrade_client, storage_node_list=None, force_flag=True):
+    # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
+    # # 16.1 Get sorage nodes list
+    # upgrade_client.do_host_list()
+    for host in storage_node_list:
+        # 16.2 Lock storage node
+        # 16.3 Verify that storage node is locked
+        upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)
+        _controller_is_locked(upgrade_client=upgrade_client, controller_name=host)
+        # 16.4 Upgrade system storage
+        upgrade_client.do_host_upgrade(host_id=host, force=force_flag)
+        # 16.5 Unlock storage node
+        upgrade_client.do_host_unlock(hostname_or_id=host, force=force_flag)
+        _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=host)
+
+
+def _upgrade_worker_nodes(ctx, upgrade_client, workers_list, force_flag=True):
+    # 17. Upgrade worker nodes - repeat for each worker node
+    # # 17.1 Get worker node list
+    # upgrade_client.do_host_list()
+    for host in workers_list:
+        # 17.2 lock worker node
+        upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)
+        _controller_is_locked(upgrade_client=upgrade_client, controller_name=host)
+        # 17.3 Upgrade worker node
+        upgrade_client.do_host_upgrade(host_id=host, force=force_flag)
+        # 17.4 Unlock worker node
+        upgrade_client.do_host_unlock(hostname_or_id=host, force=force_flag)
+        _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=host)
+
+
+def _finish_upgrade(upgrade_client, controllers_list, load_id, force_flag=True):
+    if len(controllers_list) <= 1:
+        upgrade_client.do_upgrade_activate()
+        upgrade_client.do_upgrade_show()
+        upgrade_client.do_upgrade_complete()
+        upgrade_client.delete_load(load_id)
+    else:
+        controller0 = controllers_list[0]
+        controller1 = controllers_list[1]
+        # 18 Set controller-0 as active
+        upgrade_client.do_host_swact(hostname_or_id=controller1, force=force_flag)
+        upgrade_client.wait_for_swact()
+        active_controller = upgrade_client.get_active_controller()
+        if controller0 != active_controller:
+            raise NonRecoverableError
+        # 19. Activate upgrade
+        upgrade_client.do_upgrade_activate()
+        # 20. Await for activation status complete
+        upgrade_client.do_upgrade_show()
+        # 21. Complete the upgrade
+        upgrade_client.do_upgrade_complete()
 
 
 def _controller_is_unlocked(upgrade_client, controller_name, timeout: int = 10):
@@ -188,57 +246,3 @@ def _controller_is_locked(upgrade_client, controller_name, timeout: int = 10):
              return
         time.sleep(1)
     raise NonRecoverableError
-
-
-def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
-    # 16. Upgrde ceph sotrage (if in use) - repeat for each storage node
-    # # 16.1 Get sorage nodes list
-    # upgrade_client.do_host_list()
-    for host in storage_node_list:
-        # 16.2 Lock storage node
-        upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)
-        # 16.3 Verify that storage node is locked
-        upgrade_client.do_host_show(hostname_or_id=host)
-        # 16.4 Upgrade system storage
-        upgrade_client.do_host_upgrade(host_id=host, force=force_flag)
-        # 16.5 Unlock storage node
-        upgrade_client.do_host_unlock(hostname_or_id=host, force=force_flag)
-
-
-def _upgrade_worker_nodes(upgrade_client, workers_list, force_flag=True):
-    # 17. Upgrade worker nodes - repeat for each worker node
-    # # 17.1 Get worker node list
-    # upgrade_client.do_host_list()
-    for host in workers_list:
-        # 17.2 lock worker node
-        upgrade_client.do_host_lock(hostname_or_id=host, force=force_flag)
-        # 17.3 Upgrade worker node
-        upgrade_client.do_host_upgrade(host_id=host, force=force_flag)
-        # 17.4 Unlock worker node
-        upgrade_client.do_host_unlock(hostname_or_id=host, force=force_flag)
-
-
-def _finish_upgrade(upgrade_client, controllers_list, force_flag=True):
-    if len(controllers_list)<=1:
-        upgrade_client.do_upgrade_activate()
-        upgrade_client.do_upgrade_show()
-        upgrade_client.do_upgrade_complete()
-        loads = upgrade_client.get_load_list() # TODO get load id
-        load_id = ''
-        upgrade_client.delete_load(load_id)
-    else:
-        controller0 = controllers_list[0]
-        controller1 = controllers_list[1]
-        # 18 Set controller-0 as active
-        upgrade_client.do_host_swact(hostname_or_id=controller1, force=force_flag)
-        upgrade_client.wait_for_swact()
-        active_controler = upgrade_client.get_active_controller()
-        if controller0 != active_controler:
-            raise NonRecoverableError
-        # 19. Activate upgrade
-        upgrade_client.do_upgrade_activate()
-        # 20. Await for activation status complete
-        upgrade_client.do_upgrade_show()
-        # 21. Complete the upgrade
-        upgrade_client.do_upgrade_complete()
-
