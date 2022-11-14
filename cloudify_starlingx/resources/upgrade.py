@@ -1,4 +1,6 @@
 import re
+import time
+from datetime import datetime, timedelta
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx as wtx
@@ -28,9 +30,6 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
     project_domain_id = client_config.get('os_project_domain_id', None)
     verify_value = True if client_config.get('insecure', None) else False
 
-    # : {'os_auth_url': 'http://[2620:10A:A001:A103::1065]:5000/v3', 'os_username': 'admin', 'os_project_name': 'admin',
-    #    'os_region_name': 'RegionOne', 'os_user_domain_name': 'Default', 'os_project_domain_name': 'Default',
-    #    'os_password': 'Li69nux*', 'api_version': 1}
 
     host_runtime_properties = ctx.instance.runtime_properties.get('hosts', {})
     controllers_list = sorted([v["hostname"] for k, v in host_runtime_properties.items() if v["subfunctions"] == "controller"])
@@ -83,20 +82,36 @@ def upgrade(resource, sw_version=None, license_file_path='', iso_path='', sig_pa
 
 def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_path, iso_path, sig_path, force_flag=True):
     # Make sure we are connected to controller-0
-    # 1. Install license for new release
     if len(controllers_list) <= 1:
-        controller = controllers_list[0]
-        resp = upgrade_client.apply_license(license_file_path=license_file_path)
-        if 'Success: new license installed' not in resp.get('success', ''):
-            ctx.logger.error('License not installed: {}'.format(resp))
-            raise NonRecoverableError
-        # 2. Upload ISO and SIG files to controller-0
-        upgrade_client.upload_iso_and_sig_files(iso_path=iso_path, sig_path=sig_path, active='true', local='true')
         health_status = upgrade_client.get_system_upgrade_health()
-        status = True if re.findall('NOK', health_status) else False
+        status = True if re.findall('Fail|NOK', health_status) else False
         if status:
             ctx.logger.error('Health is NOK.\n{}'.format(health_status))
             raise NonRecoverableError
+    else:
+        controller0 = controllers_list[0]
+        controller1 = controllers_list[1]
+        active_controller = upgrade_client.get_active_controller()
+        if controller0 != active_controller:
+            ctx.logger.error('ACTIVE Controller is different than expected.\n'
+                             ' Current active node: {}'.format(active_controller))
+            raise NonRecoverableError
+
+    # 1. Install license for new release
+    resp = upgrade_client.apply_license(license_file_path=license_file_path)
+    if 'Success: new license installed' not in resp.get('success', ''):
+        ctx.logger.error('License not installed: {}'.format(resp))
+        raise NonRecoverableError
+    # 2. Upload ISO and SIG files to controller-0
+    out = upgrade_client.upload_iso_and_sig_files(iso_path=iso_path, sig_path=sig_path, active='false')
+    try:
+        load_id = out.id
+    except AttributeError:
+        ctx.logger.error('Iso not loaded: {}'.format(str(out)))
+        raise AttributeError
+
+    if len(controllers_list) <= 1:
+        controller = controllers_list[0]
         upgrade_client.do_upgrade_start(force=force_flag)
         # 4. Verify that upgrade has started
         upgrade_client.do_upgrade_show()
@@ -113,16 +128,16 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
     else:
         controller0 = controllers_list[0]
         controller1 = controllers_list[1]
-        active_controller = upgrade_client.get_active_controller()
-        if controller0 != active_controller:
-            ctx.logger.error('ACTIVE Controller is different than expected.\n'
-                             ' Current active node: {}'.format(active_controller))
-            raise NonRecoverableError
-        upgrade_client.apply_license(license_file_path=license_file_path)
-        # 2. Upload ISO and SIG files to controller-0
-        upgrade_client.upload_iso_and_sig_files(iso_path=iso_path, sig_path=sig_path, active='true', local='true')
         # 3. Run upgrade start
-        upgrade_client.do_upgrade_start(force=force_flag)
+        try:
+            status = upgrade_client.do_upgrade_start(force=force_flag).state
+            state = status.state
+            if 'starting' not in state:
+                ctx.logger.error('WRONG STATUS: {}'.format(status))
+                raise NonRecoverableError
+        except AttributeError:
+            ctx.logger.error('Upgrade start ERROR: {}'.format(status))
+            raise NonRecoverableError
         # 4. Verify that upgrade has started
         upgrade_client.do_upgrade_show()
         # 5. Lock controller-1
@@ -133,7 +148,7 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         # 7. Check upgrade status
         upgrade_client.do_upgrade_show()
         # 8. Unlock controller-1
-        upgrade_client.do_host_unlock(hostname_or_id=controller1 , force=force_flag)
+        upgrade_client.do_host_unlock(hostname_or_id=controller1, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller1)
         # 10. TBD: Wait for the DRBD sync 400.001 Services-related alarm is raised and then cleared
         # 11. Set controller-1 as active controller
@@ -153,18 +168,26 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
 
 
-def _controller_is_unlocked(upgrade_client, controller_name, retry):
+def _controller_is_unlocked(upgrade_client, controller_name, timeout: int = 10):
     # 9. Wait for controller-1 to become unlocked-enabled
-    state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
-    if state != 'unlocked':
-        raise NonRecoverableError
+    timeout_start = datetime.now()
+    while datetime.now() < timeout_start + timedelta(seconds=timeout):
+        state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+        if state == 'unlocked':
+            return
+        time.sleep(1)
+    raise NonRecoverableError
 
 
-def _controller_is_locked(upgrade_client, controller_name):
+def _controller_is_locked(upgrade_client, controller_name, timeout: int = 10):
     # 9. Wait for controller-1 to become unlocked-enabled
-    state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
-    if state != 'unlocked':
-        raise NonRecoverableError
+    timeout_start = datetime.now()
+    while datetime.now() < timeout_start + timedelta(seconds=timeout):
+        state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
+        if state == 'locked':
+             return
+        time.sleep(1)
+    raise NonRecoverableError
 
 
 def _upgrade_storage_node(upgrade_client, storage_node_list=None, force_flag=True):
