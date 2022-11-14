@@ -5,10 +5,7 @@ from cgtsclient import exc
 from cgtsclient.client import get_client
 from cgtsclient.common import constants, utils
 from cgtsclient.v1 import ihost as ihost_utils
-from cgtsclient.v1.iHost_shell import _print_ihost_show
 from cgtsclient.v1.iservice import iServiceManager
-from cgtsclient.v1.license import LicenseManager
-from cgtsclient.v1.upgrade_shell import _print_upgrade_show
 from cgtsclient.v1.ihost import ihost as hostObj
 from starlingx_server.sdk.keystone_auth import get_token_from_keystone, get_endpoints, SYSINV_API_URL
 
@@ -52,7 +49,7 @@ class UpgradeClient(object):
         all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
 
         system_url = all_endpoints[SYSINV_API_URL]
-        system_url = 'http://localhost:6385'
+        # system_url = 'http://localhost:6385'
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
                    global_request_id=global_request_id,
                    insecure=insecure, system_url=system_url)
@@ -95,7 +92,7 @@ class UpgradeClient(object):
         except Exception as e:
             return 'Unhandled exception: details: {}'.format(e)
 
-    def upload_iso_and_sig_files(self, iso_path, sig_path, active='true', local='true') -> str:
+    def upload_iso_and_sig_files(self, iso_path, sig_path, active='true') -> str:
         """
         Upload iso and sig files.
 
@@ -109,12 +106,10 @@ class UpgradeClient(object):
         body = {
             'path_to_iso': iso_path,
             'path_to_sig': sig_path,
-            'active': active,
-            'local': local,
+            'active': active
         }
         try:
-            out = self.client.load.import_load(**body)
-            return 'Uploaded iso and sig files, details: {}'.format(out)
+            return self.client.load.import_load(**body)
         except exc.HTTPException as e:
             return 'Not able to upload iso and sig files: {}, code: {}, details: {}'.format(iso_path, e.code, e.details)
         except Exception as e:
@@ -130,8 +125,7 @@ class UpgradeClient(object):
         try:
             upgrade = self.client.upgrade.create(force)
             uuid = getattr(upgrade, 'uuid', '')
-            upgrade = self.client.upgrade.get(uuid)
-            return 'Started upgrade process, details: {}'.format(upgrade)
+            return self.client.upgrade.get(uuid)
         except exc.HTTPException as e:
             return 'Not able to start upgrades, code: {}, details: {}'.format(e.code, e.details)
 
@@ -165,8 +159,7 @@ class UpgradeClient(object):
         try:
             patch = utils.args_array_to_patch("replace", attributes)
             host = ihost_utils._find_ihost(self.client, hostname_or_id)
-            out = self.client.ihost.update(host.id, patch)
-            return 'Successfully locked host: {}, details: {}'.format(hostname_or_id, out)
+            return self.client.ihost.update(host.id, patch)
         except exc.HTTPException as e:
             return 'Not able to lock host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
@@ -179,8 +172,7 @@ class UpgradeClient(object):
         :rtype: str
         """
         try:
-            out = self.client.ihost.upgrade(host_id, force)
-            return 'Successfully upgraded host: {}, details: {}'.format(host_id, out)
+            return self.client.ihost.upgrade(host_id, force)
         except exc.HTTPException as e:
             return 'Not able to upgrade host: {}, code: {}, details: {}'.format(host_id, e.code, e.details)
 
@@ -204,8 +196,7 @@ class UpgradeClient(object):
         patch = utils.args_array_to_patch("replace", attributes)
         ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         try:
-            out = self.client.ihost.update(ihost.id, patch)
-            return 'Successfully unlocked host: {}, details: {}'.format(hostname_or_id, out)
+            return self.client.ihost.update(ihost.id, patch)
         except exc.HTTPException as e:
             return 'Not able to unlock host: {}, code: {}, details: {}'.format(hostname_or_id, e.code, e.details)
 
@@ -243,8 +234,7 @@ class UpgradeClient(object):
         patch = utils.args_array_to_patch("replace", attributes)
         ihost = ihost_utils._find_ihost(self.client, hostname_or_id)
         try:
-            ihost = self.client.ihost.update(ihost.id, patch)
-            return 'Activity was switched away from host: {}, details: {}'.format(hostname_or_id, ihost)
+            return self.client.ihost.update(ihost.id, patch)
         except exc.HTTPNotFound as e:
             return 'host not found: {}, details: {}'.format(hostname_or_id, e.details)
 
@@ -283,8 +273,7 @@ class UpgradeClient(object):
         for (k, v) in data.items():
             patch.append({'op': 'replace', 'path': '/' + k, 'value': v})
         try:
-            out = self.client.upgrade.update(patch)
-            return 'Software upgrade was activated successfully: {}'.format(out)
+            return self.client.upgrade.update(patch)
         except exc.HTTPException as e:
             return 'Software upgrade was not activated successfully: {}, details: {}'.format(e.code, e.details)
 
@@ -293,8 +282,7 @@ class UpgradeClient(object):
         Complete a software upgrade.
         """
         try:
-            out = self.client.upgrade.delete()
-            return 'Software upgrade was completed successfully: {}'.format(out)
+            return self.client.upgrade.delete()
         except exc.HTTPException as e:
             return 'Software upgrade was not activated successfully: {}, details: {}'.format(e.code, e.details)
 
@@ -305,8 +293,7 @@ class UpgradeClient(object):
         :rtype: str
         """
         try:
-            out = self.client.health.get_upgrade()
-            return 'Software health: {}'.format(out)
+            return self.client.health.get_upgrade()
         except exc.HTTPException as e:
             return 'Unable to get system health: {}, details: {}'.format(e.code, e.details)
 
@@ -325,8 +312,7 @@ class UpgradeClient(object):
         :rtype: str
         """
         try:
-            out = self.client.load.delete(load_id)
-            return 'Load ID: {} is deleted, details: {}'.format(load_id, out)
+            return self.client.load.delete(load_id)
         except exc.HTTPException as e:
             return 'Unable to proceed request, http code: {}, details: {}'.format(e.code, e.details)
 
