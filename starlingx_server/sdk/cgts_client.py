@@ -49,7 +49,7 @@ class UpgradeClient(object):
         all_endpoints = get_endpoints(auth_url=auth_url, headers=headers, verify=verify)
 
         system_url = all_endpoints[SYSINV_API_URL]
-        # system_url = 'http://localhost:6385'
+        system_url = 'http://localhost:6385'
         return cls(token=token, endpoint_type=endpoint_type, region_name=region_name,
                    global_request_id=global_request_id,
                    insecure=insecure, system_url=system_url)

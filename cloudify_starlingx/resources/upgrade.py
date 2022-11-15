@@ -116,14 +116,16 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         controller = controllers_list[0]
         upgrade_client.do_upgrade_start(force=force_flag)
         # 4. Verify that upgrade has started
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='started')
         # 5. Lock controller-1
         upgrade_client.do_host_lock(hostname_or_id=controller, force=force_flag)
         _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller)
         # 6. Upgrade controller-1
         upgrade_client.do_host_upgrade(host_id=controller, force=force_flag)
         # 7. Check upgrade status
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration')
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration-complete',
+                                timeout=15 * 60)
         # 8. Unlock controller-1
         upgrade_client.do_host_unlock(hostname_or_id=controller, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller)
@@ -141,17 +143,21 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
             ctx.logger.error('Upgrade start ERROR: {}'.format(status))
             raise NonRecoverableError
         # 4. Verify that upgrade has started
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='started')
         # 5. Lock controller-1
         upgrade_client.do_host_lock(hostname_or_id=controller1, force=force_flag)
         _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller1)
         # 6. Upgrade controller-1
         upgrade_client.do_host_upgrade(host_id=controller1, force=force_flag)
         # 7. Check upgrade status
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration')
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration-complete', timeout=15*60) # TODO
         # 8. Unlock controller-1
         upgrade_client.do_host_unlock(hostname_or_id=controller1, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller1)
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='upgrading-controllers', timeout=15 * 60)
+
+
         # 10. TBD: Wait for the DRBD sync 400.001 Services-related alarm is raised and then cleared
         # 11. Set controller-1 as active controller
         upgrade_client.do_host_swact(hostname_or_id=controller0, force=force_flag)
@@ -166,6 +172,9 @@ def _upgrade_controllers(ctx, upgrade_client, controllers_list, license_file_pat
         _controller_is_locked(upgrade_client=upgrade_client, controller_name=controller0)
         # 14. Upgrade controller-0
         upgrade_client.do_host_upgrade(host_id=controller0, force=force_flag)
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration')
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='data-migration-complete',
+                                timeout=15 * 60)
         # 15. Unlock Controller-0
         upgrade_client.do_host_unlock(hostname_or_id=controller0, force=force_flag)
         _controller_is_unlocked(upgrade_client=upgrade_client, controller_name=controller0)
@@ -206,7 +215,7 @@ def _upgrade_worker_nodes(ctx, upgrade_client, workers_list, force_flag=True):
 def _finish_upgrade(upgrade_client, controllers_list, load_id, force_flag=True):
     if len(controllers_list) <= 1:
         upgrade_client.do_upgrade_activate()
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='activation-complete', timeout=15 * 60)
         upgrade_client.do_upgrade_complete()
         upgrade_client.delete_load(load_id)
     else:
@@ -221,12 +230,12 @@ def _finish_upgrade(upgrade_client, controllers_list, load_id, force_flag=True):
         # 19. Activate upgrade
         upgrade_client.do_upgrade_activate()
         # 20. Await for activation status complete
-        upgrade_client.do_upgrade_show()
+        _wait_for_upgrade_state(upgrade_client=upgrade_client, expected_state='activation-complete', timeout=15 * 60)
         # 21. Complete the upgrade
         upgrade_client.do_upgrade_complete()
 
 
-def _controller_is_unlocked(upgrade_client, controller_name, timeout: int = 10):
+def _controller_is_unlocked(upgrade_client, controller_name, timeout: int = 15):
     # 9. Wait for controller-1 to become unlocked-enabled
     timeout_start = datetime.now()
     while datetime.now() < timeout_start + timedelta(seconds=timeout):
@@ -237,12 +246,22 @@ def _controller_is_unlocked(upgrade_client, controller_name, timeout: int = 10):
     raise NonRecoverableError
 
 
-def _controller_is_locked(upgrade_client, controller_name, timeout: int = 10):
+def _controller_is_locked(upgrade_client, controller_name, timeout: int = 15):
     # 9. Wait for controller-1 to become unlocked-enabled
     timeout_start = datetime.now()
     while datetime.now() < timeout_start + timedelta(seconds=timeout):
         state = upgrade_client.do_host_show(hostname_or_id=controller_name).administrative
         if state == 'locked':
              return
+        time.sleep(1)
+    raise NonRecoverableError
+
+
+def _wait_for_upgrade_state(upgrade_client, expected_state, timeout: int = 30):
+    timeout_start = datetime.now()
+    while datetime.now() < timeout_start + timedelta(seconds=timeout):
+        state = upgrade_client.do_upgrade_show().state
+        if state == expected_state:
+            return
         time.sleep(1)
     raise NonRecoverableError
