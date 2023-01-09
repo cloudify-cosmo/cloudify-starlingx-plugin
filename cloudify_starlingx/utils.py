@@ -543,7 +543,8 @@ def install_deployments(group_id, rest_client):
     attempts = 0
     while True:
         try:
-            return rest_client.execution_groups.start(group_id, 'install')
+            return rest_client.execution_groups.start(group_id, 'install',
+                                                      concurrency=20)
         except (DeploymentEnvironmentCreationPendingError,
                 DeploymentEnvironmentCreationInProgressError) as e:
             attempts += 1

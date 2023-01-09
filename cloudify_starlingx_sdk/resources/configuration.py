@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import queue as Queue
+import threading
 
 from copy import deepcopy
 
@@ -51,6 +53,8 @@ class ConfigurationResource(StarlingXResource):
 
     @property
     def connection(self):
+        if self._passed_connection:
+            return self._passed_connection
         creds = deepcopy(self.client_config)
         if creds.get('insecure', False) and 'ca_file' in creds:
             del creds['ca_file']
@@ -171,7 +175,8 @@ class SystemResource(ConfigurationResource):
         if not self._subcloud_resource:
             self._subcloud_resource = SubcloudResource(
                 client_config=self.client_config,
-                logger=self.logger
+                logger=self.logger,
+                passed_connection=self.connection
             )
         return self._subcloud_resource
 
@@ -188,8 +193,6 @@ class SystemResource(ConfigurationResource):
     def subcloud_resource_names(self):
         names = []
         if not self._subcloud_resource_names:
-            # TODO: Make parallel
-            # TODO: Here we have two calls per subcloud.
             for subcloud in self.subclouds:
                 names.append(subcloud.name)
             self._subcloud_resource_names = names
@@ -200,22 +203,39 @@ class SystemResource(ConfigurationResource):
         """ This is a list of the subcloud resource objects.
         I.e. interfaces for storing properties in runtime, etc.
         """
+        checking_queue = Queue.Queue()
         subcloud_resources = []
-        if not self._subcloud_resources:
-            # TODO: Make parallel
-            # TODO: Here we have two calls per subcloud.
-            for subcloud in self.subclouds:
+
+        def get_subcloud_info(checking_queue):
+            while True:
+                try:
+                    subcloud_id = checking_queue.get(block=False)
+                except Queue.Empty:
+                    break
                 resource = \
                     SubcloudResource(
                         client_config=self.client_config,
-                        resource_config={'subcloud_id': subcloud.subcloud_id},
-                        logger=self.logger)
+                        resource_config={'subcloud_id': subcloud_id},
+                        logger=self.logger,
+                        passed_connection=self.connection)
                 if resource.resource.availability_status.lower() == 'online' \
                         and resource.resource.management_state in ['managed']:
-                    # We only need to include online & managed resources in
-                    # the list.
                     subcloud_resources.append(resource)
-            self._subcloud_resources = subcloud_resources
+
+        for subcloud in self.subcloud_resource.list():
+            checking_queue.put(subcloud.subcloud_id)
+
+        threads = list()
+        for i in range(20):
+            t = threading.Thread(target=get_subcloud_info,
+                                 args=(checking_queue,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self._subcloud_resources = subcloud_resources
         return self._subcloud_resources
 
     @property
@@ -243,15 +263,36 @@ class SystemResource(ConfigurationResource):
         """ This is a list of the host resource objects.
         I.e. interfaces for storing properties in runtime, etc.
         """
+        checking_queue = Queue.Queue()
         host_resources = []
-        if not self._host_resources:
-            for host in self.hosts:
+
+        def get_host_info(checking_queue):
+            while True:
+                try:
+                    host_uuid = checking_queue.get(block=False)
+                except Queue.Empty:
+                    break
                 host_resources.append(
                     HostResource(client_config=self.client_config,
-                                 resource_config={'uuid': host.uuid},
-                                 logger=self.logger))
-            # connection=self.connection))
-            self._host_resources = host_resources
+                                 resource_config={'uuid': host_uuid},
+                                 logger=self.logger,
+                                 passed_connection=self.connection))
+
+        for host in self.connection.ihost.list():
+            if host.isystem_uuid == self.value_from_config('uuid'):
+                checking_queue.put(host.uuid)
+
+        threads = list()
+        for i in range(20):
+            t = threading.Thread(target=get_host_info,
+                                 args=(checking_queue,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self._host_resources = host_resources
         return self._host_resources
 
     @property
@@ -268,17 +309,38 @@ class SystemResource(ConfigurationResource):
         """ This is a list of the Kubernetes resource objects.
         I.e. interfaces for storing properties in runtime, etc.
         """
+        checking_queue = Queue.Queue()
         kube_cluster_resources = []
-        if not self._kube_cluster_resources:
-            for kube_cluster in self.kube_clusters:
+
+        def get_kube_cluster_info(checking_queue):
+            while True:
+                try:
+                    cluster_name = checking_queue.get(block=False)
+                except Queue.Empty:
+                    break
                 kube_cluster_resources.append(
                     KubeClusterResource(
                         client_config=self.client_config,
                         resource_config={
-                            'cluster_name': kube_cluster.cluster_name
+                            'cluster_name': cluster_name
                         },
-                        logger=self.logger))
-            self._kube_cluster_resources = kube_cluster_resources
+                        logger=self.logger,
+                        passed_connection=self.connection))
+
+        for kube_cluster in self.connection.kube_cluster.list():
+            checking_queue.put(kube_cluster.cluster_name)
+
+        threads = list()
+        for i in range(20):
+            t = threading.Thread(target=get_kube_cluster_info,
+                                 args=(checking_queue,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self._kube_cluster_resources = kube_cluster_resources
         return self._kube_cluster_resources
 
     @property
@@ -295,19 +357,40 @@ class SystemResource(ConfigurationResource):
         """ This is a list of the Openstack resource objects.
         I.e. interfaces for storing properties in runtime, etc.
         """
+        checking_queue = Queue.Queue()
         service_parameter_resources = []
-        if not self._service_parameter_resources:
-            for service_parameter in self.service_parameters:
-                if service_parameter.service != 'openstack':
-                    continue
+
+        def get_service_parameter_info(checking_queue):
+            while True:
+                try:
+                    uuid = checking_queue.get(block=False)
+                except Queue.Empty:
+                    break
                 service_parameter_resources.append(
                     ServiceParameterResource(
                         client_config=self.client_config,
                         resource_config={
-                            'uuid': service_parameter.uuid
+                            'uuid': uuid
                         },
-                        logger=self.logger))
-            self._service_parameter_resources = service_parameter_resources
+                        logger=self.logger,
+                        passed_connection=self.connection))
+
+        for service_parameter in self.connection.service_parameter.list():
+            if service_parameter.service != 'openstack':
+                continue
+            checking_queue.put(service_parameter.uuid)
+
+        threads = list()
+        for i in range(20):
+            t = threading.Thread(target=get_service_parameter_info,
+                                 args=(checking_queue,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self._service_parameter_resources = service_parameter_resources
         return self._service_parameter_resources
 
 
