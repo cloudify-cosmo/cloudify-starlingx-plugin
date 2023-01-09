@@ -38,7 +38,8 @@ class StarlingXResource(object):
     id_key = 'uuid'
     name_key = 'name'
 
-    def __init__(self, client_config, resource_config=None, logger=None):
+    def __init__(self, client_config, resource_config=None, logger=None,
+                 passed_connection=None):
         self.logger = logger
         self.client_config = self.merge_configs(client_config)
         self.config = resource_config or {}
@@ -46,10 +47,15 @@ class StarlingXResource(object):
         self.name = self.config.get(self.name_key)
         self._resource = None
         self._connection = None
+        self._passed_connection = passed_connection
 
     @property
     def connection(self):
         raise NotImplementedError()
+
+    @property
+    def passed_connection(self):
+        return self._passed_connection
 
     @property
     def auth_url(self):
