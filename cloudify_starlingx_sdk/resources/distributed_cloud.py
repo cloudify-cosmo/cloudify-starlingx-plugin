@@ -126,6 +126,13 @@ class SubcloudResource(DistributedCloudResource):
                     name)
         except EndpointNotFound:
             return
+        except Exception as e:
+            if "b''" in str(e):
+                raise StarlingXException(
+                    'A failure of an API call to get a data about '
+                    'a single subcloud {} '.format(name))
+            else:
+                raise e
         # I am not sure why they return a list here.
         if len(result) == 1:
             return result[0]

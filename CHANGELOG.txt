@@ -90,3 +90,9 @@
 0.0.36: Rerelease with new build process.
 0.0.37: Store subcloud name in subcloud names list instead of subcloud external id.
 0.0.38: Support redhat8 and dsl 1_4
+0.0.39: Handle update node instance correctly.
+0.0.40: RD-5877 filter out "unmanaged" subclouds
+0.0.41:
+- RD-5949 During discovery skip subclouds that the API fails to get details.
+- RD-5949 During install of a subcloud retry when the API fails to get details.
+0.0.42: Same as 0.0.42 just handling general exception.
