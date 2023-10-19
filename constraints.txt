@@ -1,4 +1,7 @@
--e git+https://opendev.org/starlingx/distcloud-client.git@master#egg=distributedcloud-client&subdirectory=distributedcloud-client
--e git+https://opendev.org/starlingx/config.git@master#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
-cryptography==3.3.2
+babel # Required by distributedcloud-client
+openstacksdk===0.15.0
+cloudify-common==6.4.2
+PrettyTable<0.8,>=0.7.2 # Required by distributedcloud-client
 python-keystoneclient==3.21.0
+git+https://github.com/starlingx/config.git@4.0.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
+git+https://github.com/starlingx/distcloud-client.git@4.0.0#egg=distributedcloud-client&subdirectory=distributedcloud-client

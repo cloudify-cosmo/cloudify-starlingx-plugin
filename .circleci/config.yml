@@ -48,6 +48,10 @@ workflows:
           filters:
             branches:
               only: /([0-9\.]*\-build|master|dev)/
+      - wagonorb/wagon_311:
+          filters:
+            branches:
+              only: /([0-9\.]*\-build|master)/
       - releaseorb/release:
           filters:
             branches:
@@ -57,6 +61,7 @@ workflows:
             - wagonorb/wagon
             - wagonorb/arch64_wagon
             - wagonorb/rhel_wagon
+            - wagonorb/wagon_311
       - releaseorb/merge_docs_job:
           filters:
             branches:
@@ -79,15 +84,7 @@ workflows:
           context: 
             - slack-secrets
           <<: *unittest-post-steps
-      - wagonorb/wagon:
-          filters:
-            branches:
-              only: /([0-9\.]*\-build|master|dev)/
-      - wagonorb/arch64_wagon:
-          filters:
-            branches:
-              only: /([0-9\.]*\-build|master|dev)/
-      - wagonorb/rhel_wagon:
+      - wagonorb/wagon_311:
           filters:
             branches:
               only: /([0-9\.]*\-build|master|dev)/
