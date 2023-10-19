@@ -97,3 +97,4 @@
 - RD-5949 During install of a subcloud retry when the API fails to get details.
 0.0.42: Same as 0.0.42 just handling general exception.
 0.0.43: add __version__.py file in cloudify_starlingx folder.
+0.0.44: Republish with 1.5 DSL and manylinux wagon.

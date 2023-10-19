@@ -32,15 +32,16 @@ setup(
     version=get_version(),
     author="Cloudify.Co",
     author_email="cosmo-admin@cloudify.co",
-    packages=find_packages(),
+    packages=[
+        'cloudify_starlingx',
+        'cloudify_starlingx_sdk',
+    ],
     license="LICENSE",
     description="Represent StarlingX Workloads in Cloudify.",
     install_requires=[
-        'PrettyTable<0.8,>=0.7.2',  # Required by distributedcloud-client
+        'cloudify-common>=6.4.2,<7.0.0',
         'distributedcloud-client',
-        'cloudify-common',
         'cgtsclient',
         'httplib2',
-        'babel',  # Required by distributedcloud-client
     ]
 )
