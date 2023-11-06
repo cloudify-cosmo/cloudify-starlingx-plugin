@@ -82,6 +82,14 @@ def poststart(resource, ctx):
     assign_site(ctx.instance, ctx.deployment.id, resource.location)
 
 
+@with_starlingx_resource(SystemResource)
+def start(resource, ctx):
+    """
+    It lists all available patches.
+    """
+    resource.patches_list()
+
+
 def get_subcloud_resource(resource, deployment_id):
     parent_ip = get_parent_wrcp_ip(deployment_id)
     if parent_ip:
@@ -111,3 +119,5 @@ def update_subcloud_resource(resource, ctx_instance, deployment_id):
             subcloud_resource.oam_floating_ip
         update_prop_resource(
             ctx_instance, subcloud_resource, 'subcloud')
+
+

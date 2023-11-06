@@ -20,7 +20,14 @@ dsl_definitions:
       type: boolean
       default: true
 
+# Will patch_id property be added to the ClientConfig?
 data_types:
+  cloudify.types.starlingx.Patch:
+    properties:
+      patch_id:
+        type: string
+        description:
+        required: true
 
   cloudify.types.starlingx.ClientConfig:
     properties:
@@ -117,6 +124,10 @@ data_types:
         type: string
         description: Geo longitude.
         default: ''
+      patch_id:
+        type: string
+        description: Patch ID to get details for.
+        required: false
 
 node_types:
 
@@ -131,6 +142,8 @@ node_types:
       cloudify.interfaces.lifecycle:
         poststart:
           implementation: starlingx.cloudify_starlingx.resources.wrcp.poststart
+        start:
+          implementation: starlingx.cloudify_starlingx.resources.wrcp.start
 
 workflows:
 
