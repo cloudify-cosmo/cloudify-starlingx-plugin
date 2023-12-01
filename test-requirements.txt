@@ -4,5 +4,3 @@ pylint
 pytest
 flake8
 PrettyTable<0.8,>=0.7.2 # Required by distributedcloud-client
-git+https://github.com/starlingx/config.git@4.0.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
-git+https://github.com/starlingx/distcloud-client.git@4.0.0#egg=distributedcloud-client&subdirectory=distributedcloud-client

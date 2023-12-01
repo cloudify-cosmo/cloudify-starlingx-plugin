@@ -14,9 +14,10 @@
 
 import os
 import re
+import sys
 import pathlib
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
+
 
 
 def get_version():
@@ -27,21 +28,33 @@ def get_version():
         return re.search(r'\d+.\d+.\d+', var).group()
 
 
+install_requires = [
+    'distributedcloud-client',
+    'cgtsclient',
+    'httplib2',
+]
+
+if sys.version_info.major == 3 and sys.version_info.minor == 6:
+    packages=[
+        'cloudify_starlingx',
+        'cloudify_starlingx_sdk',
+    ]
+    install_requires += [
+        'cloudify-common>=6.4.2,<7.0.0',
+    ]
+else:
+    packages = find_packages()
+    install_requires += [
+        'fusion-common',
+    ]
+
 setup(
     name="cloudify-starlingx-plugin",
     version=get_version(),
     author="Cloudify.Co",
     author_email="cosmo-admin@cloudify.co",
-    packages=[
-        'cloudify_starlingx',
-        'cloudify_starlingx_sdk',
-    ],
+    packages=packages,
     license="LICENSE",
     description="Represent StarlingX Workloads in Cloudify.",
-    install_requires=[
-        'cloudify-common>=6.4.2,<7.0.0',
-        'distributedcloud-client',
-        'cgtsclient',
-        'httplib2',
-    ]
+    install_requires=install_requires
 )
