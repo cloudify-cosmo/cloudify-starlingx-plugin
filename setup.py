@@ -29,8 +29,7 @@ def get_version():
 
 
 install_requires = [
-    'distributedcloud-client',
-    'cgtsclient',
+    'python-keystoneclient',
     'httplib2',
 ]
 
@@ -40,11 +39,19 @@ if sys.version_info.major == 3 and sys.version_info.minor == 6:
         'cloudify_starlingx_sdk',
     ]
     install_requires += [
+        'distributedcloud-client @ git+https://github.com/starlingx/' \
+        'distcloud-client.git@tags/4.0.0#egg=distributedcloud-client' \
+        '&subdirectory=distributedcloud-client',
+        'cgtsclient @ git+https://github.com/starlingx/' \
+        'config.git@tags/4.0.0#egg=cgtsclient' \
+        '&subdirectory=sysinv/cgts-client/cgts-client',
         'cloudify-common>=6.4.2,<7.0.0',
     ]
 else:
     packages = find_packages()
     install_requires += [
+        'distributedcloud-client',
+        'cgtsclient',
         'fusion-common',
     ]
 

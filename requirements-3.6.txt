@@ -26,7 +26,7 @@ certifi==2023.11.17
     # via requests
 cffi==1.15.1
     # via cryptography
-cgtsclient @ git+https://github.com/starlingx/config.git@r/stx.4.0#subdirectory=sysinv/cgts-client/cgts-client
+cgtsclient @ git+https://github.com/starlingx/config.git@tags/4.0.0#subdirectory=sysinv/cgts-client/cgts-client
     # via
     #   -r requirements-3.6.in
     #   cloudify-starlingx-plugin (setup.py)
@@ -61,7 +61,7 @@ decorator==5.1.1
     #   openstacksdk
 deprecation==2.1.0
     # via openstacksdk
-distributedcloud-client @ git+https://github.com/starlingx/distcloud-client.git@r/stx.4.0#subdirectory=distributedcloud-client
+distributedcloud-client @ git+https://github.com/starlingx/distcloud-client.git@tags/4.0.0#subdirectory=distributedcloud-client
     # via
     #   -r requirements-3.6.in
     #   cloudify-starlingx-plugin (setup.py)
@@ -216,8 +216,6 @@ pika==1.1.0
     # via cloudify-common
 pkginfo==1.9.6
     # via wagon
-platformdirs==2.4.0
-    # via -r requirements-3.6.in
 prettytable==0.7.2
     # via
     #   -r requirements-3.6.in
@@ -241,7 +239,7 @@ python-dateutil==2.8.2
     # via oslo.log
 python-keystoneclient==3.21.0
     # via
-    #   -r requirements-3.6.in
+    #   cloudify-starlingx-plugin (setup.py)
     #   distributedcloud-client
     #   python-neutronclient
 python-neutronclient==7.8.0

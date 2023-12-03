@@ -354,7 +354,7 @@ python-dateutil==2.8.2
     #   oslo-log
 python-keystoneclient==3.21.0
     # via
-    #   -r requirements.in
+    #   cloudify-starlingx-plugin (setup.py)
     #   distributedcloud-client
     #   python-neutronclient
 python-neutronclient==9.0.0
