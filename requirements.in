@@ -5,5 +5,6 @@
 cryptography>=41.0.5
 babel # Required by distributedcloud-client
 PrettyTable<0.8,>=0.7.2 # Required by distributedcloud-client
+openstacksdk==0.15.0
 git+https://github.com/starlingx/config.git@r/stx.4.0#egg=cgtsclient&subdirectory=sysinv/cgts-client/cgts-client
 git+https://github.com/starlingx/distcloud-client.git@r/stx.4.0#egg=distributedcloud-client&subdirectory=distributedcloud-client

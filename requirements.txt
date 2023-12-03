@@ -227,6 +227,8 @@ oauthlib==3.2.2
     # via requests-oauthlib
 openstacksdk==0.15.0
     # via
+    #   -r requirements.in
+    #   cloudify-starlingx-plugin (setup.py)
     #   os-client-config
     #   osc-lib
 os-client-config==2.1.0

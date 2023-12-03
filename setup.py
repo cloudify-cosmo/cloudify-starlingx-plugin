@@ -29,7 +29,8 @@ def get_version():
 
 
 install_requires = [
-    'python-keystoneclient',
+    'python-keystoneclient==3.21.0',
+    'openstacksdk==0.15.0',
     'httplib2',
 ]
 
@@ -40,10 +41,10 @@ if sys.version_info.major == 3 and sys.version_info.minor == 6:
     ]
     install_requires += [
         'distributedcloud-client @ git+https://github.com/starlingx/' \
-        'distcloud-client.git@tags/4.0.0#egg=distributedcloud-client' \
+        'distcloud-client.git@r/stx.4.0#egg=distributedcloud-client' \
         '&subdirectory=distributedcloud-client',
         'cgtsclient @ git+https://github.com/starlingx/' \
-        'config.git@tags/4.0.0#egg=cgtsclient' \
+        'config.git@r/stx.4.0#egg=cgtsclient' \
         '&subdirectory=sysinv/cgts-client/cgts-client',
         'cloudify-common>=6.4.2,<7.0.0',
     ]
