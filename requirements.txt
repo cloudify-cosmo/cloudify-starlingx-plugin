@@ -225,9 +225,8 @@ networkx==2.8.8
     # via fusion-common
 oauthlib==3.2.2
     # via requests-oauthlib
-openstacksdk===0.15.0
+openstacksdk==0.15.0
     # via
-    #   -r requirements.in
     #   os-client-config
     #   osc-lib
 os-client-config==2.1.0

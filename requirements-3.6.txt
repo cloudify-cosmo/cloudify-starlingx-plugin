@@ -137,9 +137,8 @@ netifaces==0.11.0
     # via
     #   openstacksdk
     #   oslo.utils
-openstacksdk===0.15.0
+openstacksdk==0.15.0
     # via
-    #   -r requirements-3.6.in
     #   os-client-config
     #   osc-lib
 os-client-config==2.1.0
@@ -217,6 +216,8 @@ pika==1.1.0
     # via cloudify-common
 pkginfo==1.9.6
     # via wagon
+platformdirs==2.4.0
+    # via -r requirements-3.6.in
 prettytable==0.7.2
     # via
     #   -r requirements-3.6.in
