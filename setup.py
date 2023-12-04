@@ -14,9 +14,10 @@
 
 import os
 import re
+import sys
 import pathlib
-from setuptools import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
+
 
 
 def get_version():
@@ -27,21 +28,41 @@ def get_version():
         return re.search(r'\d+.\d+.\d+', var).group()
 
 
+install_requires = [
+    'python-keystoneclient==3.21.0',
+    'openstacksdk==0.15.0',
+    'httplib2',
+]
+
+if sys.version_info.major == 3 and sys.version_info.minor == 6:
+    packages=[
+        'cloudify_starlingx',
+        'cloudify_starlingx_sdk',
+    ]
+    install_requires += [
+        'distributedcloud-client @ git+https://github.com/starlingx/' \
+        'distcloud-client.git@r/stx.4.0#egg=distributedcloud-client' \
+        '&subdirectory=distributedcloud-client',
+        'cgtsclient @ git+https://github.com/starlingx/' \
+        'config.git@r/stx.4.0#egg=cgtsclient' \
+        '&subdirectory=sysinv/cgts-client/cgts-client',
+        'cloudify-common>=6.4.2,<7.0.0',
+    ]
+else:
+    packages = find_packages()
+    install_requires += [
+        'distributedcloud-client',
+        'cgtsclient',
+        'fusion-common',
+    ]
+
 setup(
     name="cloudify-starlingx-plugin",
     version=get_version(),
     author="Cloudify.Co",
     author_email="cosmo-admin@cloudify.co",
-    packages=[
-        'cloudify_starlingx',
-        'cloudify_starlingx_sdk',
-    ],
+    packages=packages,
     license="LICENSE",
     description="Represent StarlingX Workloads in Cloudify.",
-    install_requires=[
-        'cloudify-common>=6.4.2,<7.0.0',
-        'distributedcloud-client',
-        'cgtsclient',
-        'httplib2',
-    ]
+    install_requires=install_requires
 )
